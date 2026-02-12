@@ -4,12 +4,16 @@
 #include "framework.h"
 #include "Client.h"
 
+#include "MainApp.h"
+
+
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
-HINSTANCE hInst;                                // 현재 인스턴스입니다.
-WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
-WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+HINSTANCE   hInst;                                // 현재 인스턴스입니다.
+HWND        g_hWnd;                                    // 전역 변수 선언 ( 선언되어 있어야 extern 사용 가능 )
+WCHAR       szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
+WCHAR       szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -22,10 +26,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ LPWSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: 여기에 코드를 입력합니다.
+    CMainApp* pMainApp = { nullptr };
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -42,6 +48,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg;
 
+    // MainApp 생성 
+    pMainApp = CMainApp::Create();
+    if (nullptr == pMainApp)
+        return FALSE;
+
     // 게임 루프 (PeekMessage)
     while (true)
     {
@@ -57,9 +68,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             }
         }
 
-        /* MainApp->Update(); */
-        /* MainApp->Render(); */
+         pMainApp->Update(0.f); 
+         pMainApp->Render(); 
     }
+
+    Safe_Release(pMainApp);
 
     return (int) msg.wParam;
 }
@@ -116,6 +129,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+
+   // 전역 변수에 담기
+   g_hWnd = hWnd;
 
    return TRUE;
 }
