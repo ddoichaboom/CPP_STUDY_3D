@@ -22,6 +22,12 @@
     <Filter Include="98. SuperClass\Base">
       <UniqueIdentifier>{93f1cf8a-022d-4fb4-a428-adcac86c29c1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="02. Timers">
+      <UniqueIdentifier>{ce537d13-ae18-40bb-a204-d8e8e85e5851}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. Timers\Manager">
+      <UniqueIdentifier>{d3cda394-c18b-45f8-b1b6-9122fc6fda4d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\Engine_Defines.h">
@@ -51,6 +57,12 @@
     <ClInclude Include="..\Public\Graphic_Device.h">
       <Filter>01. Device\Graphic</Filter>
     </ClInclude>
+    <ClInclude Include="..\Public\Timer_Manager.h">
+      <Filter>02. Timers\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Timer.h">
+      <Filter>02. Timers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Private\Base.cpp">
@@ -61,6 +73,12 @@
     </ClCompile>
     <ClCompile Include="..\Private\Graphic_Device.cpp">
       <Filter>01. Device\Graphic</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Timer_Manager.cpp">
+      <Filter>02. Timers\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Timer.cpp">
+      <Filter>02. Timers</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
