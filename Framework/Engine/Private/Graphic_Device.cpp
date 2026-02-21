@@ -193,7 +193,7 @@ HRESULT CGraphic_Device::Ready_DepthStencilView(_uint iWinCX, _uint iWinCY)
 	D3D11_TEXTURE2D_DESC	TextureDesc{};
 
 	/* 깊이 버퍼의 픽셀은 백버퍼의 픽셀과 갯수가 동일해야만 깊이 테스트가 가능해진다. */
-	/* 픽셀의 수가 다르면 아에 렌더링을 못함. */
+	/* 픽셀의 수가 다르면 아예 렌더링을 못함. */
 	TextureDesc.Width = iWinCX;
 	TextureDesc.Height = iWinCY;
 	TextureDesc.MipLevels = 1;
