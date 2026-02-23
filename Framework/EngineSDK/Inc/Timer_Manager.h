@@ -4,7 +4,7 @@
 
 NS_BEGIN(Engine)
 
-class CTimer_Manager : public CBase
+class CTimer_Manager final : public CBase
 {
 private:
 	CTimer_Manager();

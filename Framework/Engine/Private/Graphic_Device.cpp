@@ -53,8 +53,8 @@ HRESULT CGraphic_Device::Initialize(HWND hWnd, WINMODE isWindowed, _uint iWinSiz
 	ZeroMemory(&ViewPortDesc, sizeof(D3D11_VIEWPORT));
 	ViewPortDesc.TopLeftX = 0;
 	ViewPortDesc.TopLeftY = 0;
-	ViewPortDesc.Width = (_float)iWinSizeX;
-	ViewPortDesc.Height = (_float)iWinSizeY;
+	ViewPortDesc.Width = static_cast<_float>(iWinSizeX);
+	ViewPortDesc.Height = static_cast<_float>(iWinSizeY);
 	ViewPortDesc.MinDepth = 0.f;
 	ViewPortDesc.MaxDepth = 1.f;
 
