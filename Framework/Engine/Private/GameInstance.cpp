@@ -1,6 +1,7 @@
 #include "GameInstance.h"
 #include "Graphic_Device.h"
 #include "Timer_Manager.h"
+#include "Level_Manager.h"
 
 IMPLEMENT_SINGLETON(CGameInstance)
 
@@ -20,13 +21,16 @@ HRESULT CGameInstance::Initialize_Engine(const ENGINE_DESC& EngineDesc, ID3D11De
 	if (nullptr == m_pTimer_Manager)
 		return E_FAIL;
 
+	m_pLevel_Manager = CLevel_Manager::Create();
+	if (nullptr == m_pLevel_Manager)
+		return E_FAIL;
 
 	return S_OK;
 }
 
 void CGameInstance::Update_Engine(_float fTimeDelta)
 {
-
+	m_pLevel_Manager->Update(fTimeDelta);
 }
 
 HRESULT CGameInstance::Begin_Draw()
@@ -45,6 +49,9 @@ HRESULT CGameInstance::Begin_Draw()
 
 HRESULT CGameInstance::Draw()
 {
+	if (FAILED(m_pLevel_Manager->Render()))
+		return E_FAIL;
+
 	return S_OK;
 }
 
@@ -74,11 +81,28 @@ void CGameInstance::Compute_Timer(const _wstring& strTimerTag)
 
 #pragma endregion
 
+#pragma region LEVEL_MANAGER
+
+void CGameInstance::Clear_Resources(_int iLevelIndex)
+{
+	if (-1 == iLevelIndex)
+		return;
+
+	/*iLevelIndex용 자원을 정리한다. */
+}
+
+HRESULT CGameInstance::Change_Level(_int iNewLevelIndex, CLevel* pNewLevel)
+{
+	return m_pLevel_Manager->Change_Level(iNewLevelIndex, pNewLevel);
+}
+
+#pragma endregion
 
 void CGameInstance::Free()
 {
 	__super::Free();
 
+	Safe_Release(m_pLevel_Manager);
 	Safe_Release(m_pTimer_Manager);
 	Safe_Release(m_pGraphic_Device);
 }

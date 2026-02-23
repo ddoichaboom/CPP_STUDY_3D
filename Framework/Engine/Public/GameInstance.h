@@ -30,9 +30,15 @@ public:
 	void					Compute_Timer(const _wstring& strTimerTag);
 #pragma endregion
 
+#pragma region LEVEL_MANAGER
+	void 					Clear_Resources(_int iLevelIndex);
+	HRESULT 				Change_Level(_int iNewLevelIndex, class CLevel* pNewLevel);
+#pragma endregion
+
 private:
 	class CGraphic_Device*	m_pGraphic_Device = { nullptr };
 	class CTimer_Manager*	m_pTimer_Manager = { nullptr };
+	class CLevel_Manager*	m_pLevel_Manager = { nullptr };
 	
 public:
 	virtual void			Free() override;
