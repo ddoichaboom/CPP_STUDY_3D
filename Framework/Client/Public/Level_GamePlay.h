@@ -17,8 +17,8 @@ public:
 	virtual HRESULT				Render() override;
 
 public:
-	static CLevel_GamePlay* Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext);
-	virtual void Free() override;
+	static CLevel_GamePlay*		Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext);
+	virtual void				Free() override;
 };
 
 NS_END

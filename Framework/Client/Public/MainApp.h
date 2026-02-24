@@ -17,22 +17,22 @@ private:
 	virtual ~CMainApp() = default;
 
 public:
-	HRESULT Initialize();
-	void	Update(_float fTimeDelta);
-	HRESULT Render();
+	HRESULT					Initialize();
+	void					Update(_float fTimeDelta);
+	HRESULT					Render();
 
 private:
-	ID3D11Device* m_pDevice = { nullptr };
-	ID3D11DeviceContext* m_pContext = { nullptr };
-	CGameInstance* m_pGameInstance = { nullptr };
+	ID3D11Device*			m_pDevice = { nullptr };
+	ID3D11DeviceContext*	m_pContext = { nullptr };
+	CGameInstance*			m_pGameInstance = { nullptr };
 
 private:
-	HRESULT Start_Level(LEVEL eStartLevelID);
+	HRESULT					Start_Level(LEVEL eStartLevelID);
 
 	
 public:
-	static CMainApp* Create();
-	virtual void Free() override;
+	static CMainApp*		Create();
+	virtual void			Free() override;
 };
 
 NS_END

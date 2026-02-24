@@ -2,7 +2,9 @@
 #define Engine_Macro_h__
 
 #define 		ETOI(_enum) static_cast<signed int>(_enum)
-#define			ETOU(_enum) static_cast<unsigned int>(_enum)
+#define			ETOUI(_enum) static_cast<unsigned int>(_enum)
+
+#define			PURE	= 0
 
 #ifndef			MSG_BOX
 #define			MSG_BOX(_message)			MessageBox(NULL, TEXT(_message), L"System Message", MB_OK)

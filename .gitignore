@@ -50,3 +50,6 @@ FileContentIndex/
 Thumbs.db
 .DS_Store
 
+# CLAUDE 설정 파일 및 추가 md 파일
+*.md
+

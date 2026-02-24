@@ -20,6 +20,9 @@ unsigned int APIENTRY ThreadMain(void* pArg)
 
 HRESULT CLoader::Initialize(LEVEL eNextLevelID)
 {
+	m_eNextLevelID = eNextLevelID;
+	InitializeCriticalSection(&m_CriticalSection);
+
 	// eNextLevelID 에 필요한 자원을 로딩하는 작업을 수행한다.
 	// 누가? 스레드가 수행한다.
 	m_hThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr, 0, ThreadMain, this, 0, nullptr));
@@ -31,6 +34,73 @@ HRESULT CLoader::Initialize(LEVEL eNextLevelID)
 
 HRESULT CLoader::Loading()
 {
+	EnterCriticalSection(&m_CriticalSection);
+
+	HRESULT			hr = {};
+
+	switch (m_eNextLevelID)
+	{
+	case LEVEL::LOGO:
+		hr = Ready_Resources_For_Logo();
+		break;
+	case LEVEL::GAMEPLAY:
+		hr = Ready_Resources_For_GamePlay();
+		break;
+	}
+
+	LeaveCriticalSection(&m_CriticalSection);
+
+	if (FAILED(hr))
+		return E_FAIL;
+
+	return S_OK;
+}
+
+#ifdef _DEBUG
+void CLoader::Show()
+{
+	SetWindowText(g_hWnd, m_szLoadingText);
+}
+#endif
+
+HRESULT CLoader::Ready_Resources_For_Logo()
+{
+	lstrcpy(m_szLoadingText, TEXT("텍스쳐 로딩 중"));
+
+
+	lstrcpy(m_szLoadingText, TEXT("셰이더 로딩 중"));
+
+
+	lstrcpy(m_szLoadingText, TEXT("정점, 인덱스 버퍼 로딩 중"));
+
+
+	lstrcpy(m_szLoadingText, TEXT("객체원형 로딩 중"));
+
+	lstrcpy(m_szLoadingText, TEXT("로딩이 완료되었습니다."));
+
+	m_isFinished = true;
+
+	return S_OK;
+}
+
+HRESULT CLoader::Ready_Resources_For_GamePlay()
+{
+	lstrcpy(m_szLoadingText, TEXT("텍스쳐 로딩 중"));
+
+
+	lstrcpy(m_szLoadingText, TEXT("셰이더 로딩 중"));
+
+
+	lstrcpy(m_szLoadingText, TEXT("정점, 인덱스 버퍼 로딩 중"));
+
+
+	lstrcpy(m_szLoadingText, TEXT("객체원형 로딩 중"));
+
+
+	lstrcpy(m_szLoadingText, TEXT("로딩이 완료되었습니다."));
+
+	m_isFinished = true;
+
 	return S_OK;
 }
 
@@ -50,6 +120,12 @@ CLoader* CLoader::Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, L
 void CLoader::Free()
 {
 	__super::Free();
+
+	WaitForSingleObject(m_hThread, INFINITE);
+
+	DeleteCriticalSection(&m_CriticalSection);
+
+	CloseHandle(m_hThread);
 
 	Safe_Release(m_pDevice);
 	Safe_Release(m_pContext);

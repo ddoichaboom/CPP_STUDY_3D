@@ -2,6 +2,7 @@
 #include "Graphic_Device.h"
 #include "Timer_Manager.h"
 #include "Level_Manager.h"
+#include "Prototype_Manager.h"
 
 IMPLEMENT_SINGLETON(CGameInstance)
 
@@ -23,6 +24,10 @@ HRESULT CGameInstance::Initialize_Engine(const ENGINE_DESC& EngineDesc, ID3D11De
 
 	m_pLevel_Manager = CLevel_Manager::Create();
 	if (nullptr == m_pLevel_Manager)
+		return E_FAIL;
+
+	m_pPrototype_Manager = CPrototype_Manager::Create(EngineDesc.iNumLevels);
+	if (nullptr == m_pPrototype_Manager)
 		return E_FAIL;
 
 	return S_OK;
@@ -102,6 +107,7 @@ void CGameInstance::Free()
 {
 	__super::Free();
 
+	Safe_Release(m_pPrototype_Manager);
 	Safe_Release(m_pLevel_Manager);
 	Safe_Release(m_pTimer_Manager);
 	Safe_Release(m_pGraphic_Device);

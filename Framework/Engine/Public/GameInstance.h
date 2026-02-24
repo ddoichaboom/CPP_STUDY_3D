@@ -14,34 +14,39 @@ private:
 
 #pragma region ENGINE
 public:
-	HRESULT					Initialize_Engine(const ENGINE_DESC& EngineDesc,
-												ID3D11Device** ppDevice,
-												ID3D11DeviceContext** ppContext);
-	void					Update_Engine(_float fTimeDelta);
-	HRESULT					Begin_Draw();
-	HRESULT					Draw();
-	HRESULT					End_Draw();
+	HRESULT						Initialize_Engine(const ENGINE_DESC& EngineDesc,
+													ID3D11Device** ppDevice,
+													ID3D11DeviceContext** ppContext);
+	void						Update_Engine(_float fTimeDelta);
+	HRESULT						Begin_Draw();
+	HRESULT						Draw();
+	HRESULT						End_Draw();
 #pragma endregion
 
 #pragma region TIMER_MANAGER
 public:
-	_float					Get_TimeDelta(const _wstring& strTimerTag);
-	HRESULT					Add_Timer(const _wstring& strTimerTag);
-	void					Compute_Timer(const _wstring& strTimerTag);
+	_float						Get_TimeDelta(const _wstring& strTimerTag);
+	HRESULT						Add_Timer(const _wstring& strTimerTag);
+	void						Compute_Timer(const _wstring& strTimerTag);
 #pragma endregion
 
 #pragma region LEVEL_MANAGER
-	void 					Clear_Resources(_int iLevelIndex);
-	HRESULT 				Change_Level(_int iNewLevelIndex, class CLevel* pNewLevel);
+	void 						Clear_Resources(_int iLevelIndex);
+	HRESULT 					Change_Level(_int iNewLevelIndex, class CLevel* pNewLevel);
+#pragma endregion
+
+#pragma region PROTOTYPE_MANAGER
+
 #pragma endregion
 
 private:
-	class CGraphic_Device*	m_pGraphic_Device = { nullptr };
-	class CTimer_Manager*	m_pTimer_Manager = { nullptr };
-	class CLevel_Manager*	m_pLevel_Manager = { nullptr };
+	class CGraphic_Device*		m_pGraphic_Device = { nullptr };
+	class CTimer_Manager*		m_pTimer_Manager = { nullptr };
+	class CLevel_Manager*		m_pLevel_Manager = { nullptr };
+	class CPrototype_Manager*	m_pPrototype_Manager = { nullptr };
 	
 public:
-	virtual void			Free() override;
+	virtual void				Free() override;
 };
 
 NS_END

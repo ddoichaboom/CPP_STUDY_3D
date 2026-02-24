@@ -18,6 +18,10 @@ void CLevel_GamePlay::Update(_float fTimeDelta)
 
 HRESULT CLevel_GamePlay::Render()
 {
+#ifdef _DEBUG
+	SetWindowText(g_hWnd, TEXT("게임 플레이 레벨 입니다."));
+#endif
+
 	return S_OK;
 }
 
