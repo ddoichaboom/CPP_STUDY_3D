@@ -36,7 +36,13 @@ public:
 #pragma endregion
 
 #pragma region PROTOTYPE_MANAGER
+	HRESULT						Add_Prototype(_uint iLevelIndex, const _wstring& strPrototypeTag, CBase* pPrototype);
+	CBase*						Clone_Prototype(PROTOTYPE eType, _uint iLevelIndex, const _wstring& strPrototypeTag, void* pArg = nullptr); 
+#pragma endregion
 
+#pragma region OBJECT_MANAGER
+	HRESULT						Add_GameObject(_uint iPrototypeLevelIndex, const _wstring& strPrototypeTag,
+												_uint iLayerLevelIndex, const _wstring& strLayerTag, void* pArg = nullptr);
 #pragma endregion
 
 private:
@@ -44,8 +50,10 @@ private:
 	class CTimer_Manager*		m_pTimer_Manager = { nullptr };
 	class CLevel_Manager*		m_pLevel_Manager = { nullptr };
 	class CPrototype_Manager*	m_pPrototype_Manager = { nullptr };
+	class CObject_Manager*		m_pObject_Manager = { nullptr };
 	
 public:
+	void						Release_Engine();
 	virtual void				Free() override;
 };
 
