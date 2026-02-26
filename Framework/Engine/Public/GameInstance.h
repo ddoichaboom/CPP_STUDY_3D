@@ -21,6 +21,8 @@ public:
 	HRESULT						Begin_Draw();
 	HRESULT						Draw();
 	HRESULT						End_Draw();
+	void 						Clear_Resources(_int iLevelIndex);
+
 #pragma endregion
 
 #pragma region TIMER_MANAGER
@@ -31,7 +33,6 @@ public:
 #pragma endregion
 
 #pragma region LEVEL_MANAGER
-	void 						Clear_Resources(_int iLevelIndex);
 	HRESULT 					Change_Level(_int iNewLevelIndex, class CLevel* pNewLevel);
 #pragma endregion
 

@@ -4,7 +4,7 @@
 #include "Layer.h"
 
 CObject_Manager::CObject_Manager()
-	: m_pGameInstance(CGameInstance::GetInstance())
+	: m_pGameInstance { CGameInstance::GetInstance() }
 {
 	Safe_AddRef(m_pGameInstance);
 }

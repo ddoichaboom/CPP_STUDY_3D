@@ -74,6 +74,14 @@ HRESULT CGameInstance::End_Draw()
 	return m_pGraphic_Device->Present();
 }
 
+void CGameInstance::Clear_Resources(_int iLevelIndex)
+{
+	if (-1 == iLevelIndex)
+		return;
+
+	/*iLevelIndex용 자원을 정리한다. */
+}
+
 #pragma endregion
 
 #pragma region TIMER_MANAGER
@@ -96,14 +104,6 @@ void CGameInstance::Compute_Timer(const _wstring& strTimerTag)
 #pragma endregion
 
 #pragma region LEVEL_MANAGER
-
-void CGameInstance::Clear_Resources(_int iLevelIndex)
-{
-	if (-1 == iLevelIndex)
-		return;
-
-	/*iLevelIndex용 자원을 정리한다. */
-}
 
 HRESULT CGameInstance::Change_Level(_int iNewLevelIndex, CLevel* pNewLevel)
 {
