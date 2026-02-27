@@ -49,6 +49,14 @@ CBase* CPrototype_Manager::Clone_Prototype(PROTOTYPE eType, _uint iLevelIndex, c
 	return pInstance;
 }
 
+void CPrototype_Manager::Clear(_uint iLevelIndex)
+{
+	for (auto& Pair : m_pPrototypes[iLevelIndex])
+		Safe_Release(Pair.second);
+
+	m_pPrototypes[iLevelIndex].clear();
+}
+
 CBase* CPrototype_Manager::Find_Prototype(_uint iLevelIndex, const _wstring& strPrototypeTag)
 {
 	auto iter = m_pPrototypes[iLevelIndex].find(strPrototypeTag);

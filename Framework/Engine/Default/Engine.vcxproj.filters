@@ -49,6 +49,9 @@
     <Filter Include="05. GameObject\Manager\Layer">
       <UniqueIdentifier>{4baddf13-af7e-4394-acc7-da5fc66d2f29}</UniqueIdentifier>
     </Filter>
+    <Filter Include="06. Renderer">
+      <UniqueIdentifier>{02ae7651-70f5-4e85-b276-739925e07dee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\Engine_Defines.h">
@@ -102,6 +105,9 @@
     <ClInclude Include="..\Public\Object_Manager.h">
       <Filter>05. GameObject\Manager</Filter>
     </ClInclude>
+    <ClInclude Include="..\Public\Renderer.h">
+      <Filter>06. Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Private\Base.cpp">
@@ -136,6 +142,9 @@
     </ClCompile>
     <ClCompile Include="..\Private\Object_Manager.cpp">
       <Filter>05. GameObject\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Renderer.cpp">
+      <Filter>06. Renderer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

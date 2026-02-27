@@ -73,6 +73,14 @@ void CObject_Manager::Late_Update(_float fTimeDelta)
 	}
 }
 
+void CObject_Manager::Clear(_uint iLevelIndex)
+{
+	for (auto& Pair : m_pLayers[iLevelIndex])
+		Safe_Release(Pair.second);
+
+	m_pLayers[iLevelIndex].clear();
+}
+
 CLayer* CObject_Manager::Find_Layer(_uint iLayerLevelIndex, const _wstring& strLayerTag)
 {
 	auto iter = m_pLayers[iLayerLevelIndex].find(strLayerTag);

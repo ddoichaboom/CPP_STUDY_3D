@@ -21,6 +21,8 @@ public:
 	HRESULT						Begin_Draw();
 	HRESULT						Draw();
 	HRESULT						End_Draw();
+	void 						Clear_Resources(_int iLevelIndex);
+
 #pragma endregion
 
 #pragma region TIMER_MANAGER
@@ -31,7 +33,6 @@ public:
 #pragma endregion
 
 #pragma region LEVEL_MANAGER
-	void 						Clear_Resources(_int iLevelIndex);
 	HRESULT 					Change_Level(_int iNewLevelIndex, class CLevel* pNewLevel);
 #pragma endregion
 
@@ -45,12 +46,17 @@ public:
 												_uint iLayerLevelIndex, const _wstring& strLayerTag, void* pArg = nullptr);
 #pragma endregion
 
+#pragma region RENDERER
+	void						Add_RenderGroup(RENDERID eGroupID, class CGameObject* pGameObject);
+#pragma endregion
+
 private:
 	class CGraphic_Device*		m_pGraphic_Device = { nullptr };
 	class CTimer_Manager*		m_pTimer_Manager = { nullptr };
 	class CLevel_Manager*		m_pLevel_Manager = { nullptr };
 	class CPrototype_Manager*	m_pPrototype_Manager = { nullptr };
 	class CObject_Manager*		m_pObject_Manager = { nullptr };
+	class CRenderer*			m_pRenderer = { nullptr };
 	
 public:
 	void						Release_Engine();
