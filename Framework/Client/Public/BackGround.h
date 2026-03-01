@@ -7,6 +7,12 @@ NS_BEGIN(Client)
 
 class CBackGround final : public CGameObject
 {
+public:
+	typedef struct tagBackGroundDesc : public CGameObject::GAMEOBJECT_DESC
+	{
+
+	}BACKGROUND_DESC;
+
 protected:
 	CBackGround(ID3D11Device* pDevice, ID3D11DeviceContext* pContext);
 	CBackGround(const CBackGround& Prototype);

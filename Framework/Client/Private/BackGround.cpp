@@ -18,6 +18,10 @@ HRESULT CBackGround::Initialize_Prototype()
 
 HRESULT CBackGround::Initialize(void* pArg)
 {
+	auto pDesc = static_cast<BACKGROUND_DESC*>(pArg);
+	if (FAILED(__super::Initialize(pDesc)))
+		return E_FAIL;
+
 	return S_OK;
 }
 
@@ -33,7 +37,6 @@ void CBackGround::Update(_float fTimeDelta)
 
 void CBackGround::Late_Update(_float fTimeDelta)
 {
-
 	// 업데이트 다 끝날 시점(렌더 직전)에 자기 자신을 해당되는 렌더 그룹에 등록
 	m_pGameInstance->Add_RenderGroup(RENDERID::PRIORITY, this);
 }

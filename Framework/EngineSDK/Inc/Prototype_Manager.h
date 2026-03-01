@@ -20,7 +20,7 @@ public:
 	void										Clear(_uint iLevelIndex);
 
 private:
-	_uint										m_iNumLevels = {};
+	size_t										m_iNumLevels = {};
 	map<const _wstring, class CBase*>*			m_pPrototypes = { nullptr };
 	typedef map<const _wstring, class CBase*>	PROTOTYPES;
 
