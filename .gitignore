@@ -52,4 +52,4 @@ Thumbs.db
 
 # CLAUDE 설정 파일 및 추가 md 파일
 *.md
-
+FrameWork/.claude/
