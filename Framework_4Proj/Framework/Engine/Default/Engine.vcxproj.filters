@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="00. GameInstance">
+      <UniqueIdentifier>{b42ea81c-eb33-446a-bd54-9a44e5c3d24f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01. Device">
+      <UniqueIdentifier>{8139f945-1c96-4626-a703-42b222ef938d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="98. SuperClass">
+      <UniqueIdentifier>{6ad0e9ef-36f2-4018-8c8c-b72db7bb76b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="99. Defines">
+      <UniqueIdentifier>{bc89c2b2-7b87-4506-be0c-abbf7dbed140}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="98. SuperClass\Base">
+      <UniqueIdentifier>{155c07f9-49dc-4276-811d-b7572fb1f784}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. Timers">
+      <UniqueIdentifier>{037f5d0a-9a71-42cb-9313-5b08975744de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="02. Timers\Manager">
+      <UniqueIdentifier>{0cc3f17c-f29a-49cc-a425-9d6b3bb2d211}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. Levels">
+      <UniqueIdentifier>{891e4c88-761c-4e64-b622-16883a6db2a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="04. Prototype">
+      <UniqueIdentifier>{a5c809c4-5335-4a25-a233-5051db269aef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="03. Levels\Manager">
+      <UniqueIdentifier>{a8934262-e02b-442a-9e02-61db7309cd09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="04. Prototype\Manager">
+      <UniqueIdentifier>{dab56da1-f49c-4196-9b7a-09d752c51540}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="05. GameObject">
+      <UniqueIdentifier>{a703d929-ed81-491f-b202-b19ca253b631}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="05. GameObject\Manager">
+      <UniqueIdentifier>{2619a2dd-2b00-47a4-a20f-471187ccb001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="05. GameObject\Manager\Layer">
+      <UniqueIdentifier>{8f4dca03-f49e-4993-b9f4-a5ee24ec1fc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="06. Renderer">
+      <UniqueIdentifier>{d1a0ecfc-2f62-48f0-85f5-c5b2b673328a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component">
+      <UniqueIdentifier>{153b7e3c-786f-4e79-baad-a738a2167b1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\Transform">
+      <UniqueIdentifier>{c6a32ce5-f5fc-421b-b902-ec56ab1a218b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Public\Engine_Defines.h">
+      <Filter>99. Defines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Engine_Enum.h">
+      <Filter>99. Defines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Engine_Function.h">
+      <Filter>99. Defines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Engine_Macro.h">
+      <Filter>99. Defines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Engine_Struct.h">
+      <Filter>99. Defines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Engine_Typedef.h">
+      <Filter>99. Defines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Base.h">
+      <Filter>98. SuperClass\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\GameInstance.h">
+      <Filter>00. GameInstance</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Graphic_Device.h">
+      <Filter>01. Device</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Timer.h">
+      <Filter>02. Timers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Timer_Manager.h">
+      <Filter>02. Timers\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Level_Manager.h">
+      <Filter>03. Levels\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Level.h">
+      <Filter>03. Levels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Prototype_Manager.h">
+      <Filter>04. Prototype\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\GameObject.h">
+      <Filter>05. GameObject</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Layer.h">
+      <Filter>05. GameObject\Manager\Layer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Object_Manager.h">
+      <Filter>05. GameObject\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Renderer.h">
+      <Filter>06. Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Component.h">
+      <Filter>07. Component</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Transform.h">
+      <Filter>07. Component\Transform</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Private\Base.cpp">
+      <Filter>98. SuperClass\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Transform.cpp">
+      <Filter>07. Component\Transform</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Component.cpp">
+      <Filter>07. Component</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Renderer.cpp">
+      <Filter>06. Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Layer.cpp">
+      <Filter>05. GameObject\Manager\Layer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Object_Manager.cpp">
+      <Filter>05. GameObject\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\GameObject.cpp">
+      <Filter>05. GameObject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Prototype_Manager.cpp">
+      <Filter>04. Prototype\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Level_Manager.cpp">
+      <Filter>03. Levels\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Level.cpp">
+      <Filter>03. Levels</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Timer_Manager.cpp">
+      <Filter>02. Timers\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Timer.cpp">
+      <Filter>02. Timers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Graphic_Device.cpp">
+      <Filter>01. Device</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\GameInstance.cpp">
+      <Filter>00. GameInstance</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

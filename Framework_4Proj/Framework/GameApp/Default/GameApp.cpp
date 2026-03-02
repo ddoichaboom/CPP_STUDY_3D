@@ -1,20 +1,20 @@
-﻿// Client.cpp : 애플리케이션에 대한 진입점을 정의합니다.
+﻿// GameApp.cpp : 애플리케이션에 대한 진입점을 정의합니다.
 //
 
 #include "framework.h"
-#include "Client.h"
+#include "GameApp.h"
+#include "GameApp_Defines.h"
 
 #include "MainApp.h"
 #include "GameInstance.h"
 
-
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
-HINSTANCE   hInst;                                      // 현재 인스턴스입니다.
-HWND        g_hWnd;                                    // 전역 변수 선언 ( 선언되어 있어야 extern 사용 가능 )
-WCHAR       szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
-WCHAR       szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+HINSTANCE           hInst;                                      // 현재 인스턴스입니다.
+HWND                g_hWnd;
+WCHAR               szTitle[MAX_LOADSTRING];                    // 제목 표시줄 텍스트입니다.
+WCHAR               szWindowClass[MAX_LOADSTRING];              // 기본 창 클래스 이름입니다.
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -38,7 +38,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_CLIENT, szWindowClass, MAX_LOADSTRING);
+    LoadStringW(hInstance, IDC_GAMEAPP, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
 
     // 애플리케이션 초기화를 수행합니다:
@@ -47,28 +47,30 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         return FALSE;
     }
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_CLIENT));
+    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_GAMEAPP));
 
     MSG msg;
 
-    // MainApp 생성 
-    pMainApp = CMainApp::Create();
+    // MainApp 생성
+    pMainApp = CMainApp::Create(g_hWnd, g_iWinSizeX, g_iWinSizeY);
     if (nullptr == pMainApp)
         return FALSE;
 
-	CGameInstance* pGameInstance = CGameInstance::GetInstance();
+    CGameInstance* pGameInstance = CGameInstance::GetInstance();
     Safe_AddRef(pGameInstance);
 
     // Timer 등록
-	if (FAILED(pGameInstance->Add_Timer(TEXT("Timer_Default"))))    // 기본 타이머
+    // 1. 기본 타이머
+    if (FAILED(pGameInstance->Add_Timer(TEXT("Timer_Default"))))        
         return E_FAIL;
-	if (FAILED(pGameInstance->Add_Timer(TEXT("Timer_60"))))         // 60프레임 고정 타이머
+    // 2. 60 프레임 고정 타이머
+    if (FAILED(pGameInstance->Add_Timer(TEXT("Timer_60"))))
         return E_FAIL;
 
+    // float형 누적 변수 
+    _float fTimeAcc = { };
 
-    _float  fTimeAcc = { };
-
-    // 게임 루프 (PeekMessage)
+    // 게임 메인 루프 ( PeekMessage )
     while (true)
     {
         if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -83,7 +85,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             }
         }
 
-		pGameInstance->Compute_Timer(TEXT("Timer_Default"));
+        pGameInstance->Compute_Timer(TEXT("Timer_Default"));
 
         fTimeAcc += pGameInstance->Get_TimeDelta(TEXT("Timer_Default"));
 
@@ -91,7 +93,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         {
             pGameInstance->Compute_Timer(TEXT("Timer_60"));
 
-			pMainApp->Update(pGameInstance->Get_TimeDelta(TEXT("Timer_60")));
+            pMainApp->Update(pGameInstance->Get_TimeDelta(TEXT("Timer_60")));
             pMainApp->Render();
 
             fTimeAcc = 0.f;
@@ -103,7 +105,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     return (int) msg.wParam;
 }
-
 
 
 //
@@ -122,10 +123,10 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.cbClsExtra     = 0;
     wcex.cbWndExtra     = 0;
     wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_CLIENT));
+    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_GAMEAPP));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_CLIENT);
+    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_GAMEAPP);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -148,10 +149,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    RECT rcWindow = { 0, 0, g_iWinSizeX, g_iWinSizeY };
 
-   AdjustWindowRect(&rcWindow, WS_OVERLAPPEDWINDOW, TRUE);
+   AdjustWindowRect(& rcWindow, WS_OVERLAPPEDWINDOW, TRUE );
 
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-                                CW_USEDEFAULT, 0,
+                                CW_USEDEFAULT, 0, 
                                 rcWindow.right - rcWindow.left,
                                 rcWindow.bottom - rcWindow.top,
                                 nullptr, nullptr, hInstance, nullptr);
@@ -164,7 +165,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
-   // 전역 변수에 담기
    g_hWnd = hWnd;
 
    return TRUE;
