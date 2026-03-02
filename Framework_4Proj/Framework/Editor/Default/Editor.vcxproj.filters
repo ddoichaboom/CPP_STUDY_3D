@@ -4,10 +4,25 @@
     <Filter Include="98. Default">
       <UniqueIdentifier>{207e7335-7080-4fd7-b0ac-78676af49d63}</UniqueIdentifier>
     </Filter>
+    <Filter Include="99. Defines">
+      <UniqueIdentifier>{66c478a3-949d-4a5e-ae5a-4181322aab29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="97. ImGui">
+      <UniqueIdentifier>{4b928a38-2476-4518-88c1-d483508b1bee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="97. ImGui\ImGuizmo">
+      <UniqueIdentifier>{fa553572-d5f6-470d-ae42-0a561943840b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="00. EditorApp">
+      <UniqueIdentifier>{edd53275-4fad-480e-810a-a7ec0a60b4af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Editor.cpp">
       <Filter>98. Default</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\EditorApp.cpp">
+      <Filter>00. EditorApp</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -22,6 +37,12 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>98. Default</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Editor_Defines.h">
+      <Filter>99. Defines</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\EditorApp.h">
+      <Filter>00. EditorApp</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
