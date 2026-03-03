@@ -24,7 +24,6 @@ WCHAR               szWindowClass[MAX_LOADSTRING];              // 기본 창 �
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-//INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -164,7 +163,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    _uint g_iWinSizeY = 900;
    Get_MonitorResolution(&g_iWinSizeX, &g_iWinSizeY);
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_POPUP,
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
                             0, 0,
                             g_iWinSizeX,
                             g_iWinSizeY,
@@ -175,7 +174,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   ShowWindow(hWnd, nCmdShow);
+   //ShowWindow(hWnd, nCmdShow);
+   // 크기 최대 
+   ShowWindow(hWnd, SW_MAXIMIZE);
    UpdateWindow(hWnd);
 
    g_hWnd = hWnd;
