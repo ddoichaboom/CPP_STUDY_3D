@@ -17,7 +17,7 @@ private:
 
 public:
 	HRESULT					Initialize(HWND hWnd, _uint iWinSizeX, _uint iWinSizeY);
-	void					Update(_float fTimedelta);
+	void					Update(_float fTimeDelta);
 	HRESULT					Render();
 
 private:
@@ -25,6 +25,7 @@ private:
 	ID3D11DeviceContext*	m_pContext = { nullptr };
 	CGameInstance*			m_pGameInstance = { nullptr };
 
+#pragma region IMGUI
 private:
 	HRESULT					Ready_ImGui(HWND hWnd);
 	void					ShutDown_ImGui();
@@ -33,6 +34,7 @@ private:
 	void					Begin_ImGuiFrame();
 	void					Render_DockSpace();
 	void					Render_ImGui();
+#pragma endregion
 
 public:
 	static CEditorApp*		Create(HWND hWnd, _uint iWinSizeX, _uint iWinSizeY);

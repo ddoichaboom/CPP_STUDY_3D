@@ -3,29 +3,42 @@
 
 #include "framework.h"
 #include "Editor.h"
+#include "Editor_Defines.h"
+
+#include "EditorApp.h"
+#include "GameInstance.h"
+
+// ImGui WndProc 핸들러 전방선언
+extern LRESULT ImGui_ImplWin32_WndProcHandler(
+    HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
-HINSTANCE hInst;                                // 현재 인스턴스입니다.
-WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
-WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
+HINSTANCE           hInst;                                      // 현재 인스턴스입니다.
+HWND                g_hWnd;
+WCHAR               szTitle[MAX_LOADSTRING];                    // 제목 표시줄 텍스트입니다.
+WCHAR               szWindowClass[MAX_LOADSTRING];              // 기본 창 클래스 이름입니다.
 
 // 이 코드 모듈에 포함된 함수의 선언을 전달합니다:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+//INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
                      _In_ LPWSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
+#ifdef _DEBUG
+    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: 여기에 코드를 입력합니다.
+    CEditorApp* pEditorApp = { nullptr };
 
     // 전역 문자열을 초기화합니다.
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -42,15 +55,62 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     MSG msg;
 
-    // 기본 메시지 루프입니다:
-    while (GetMessage(&msg, nullptr, 0, 0))
+    // EditorApp 생성
+    RECT rcClient{};
+    GetClientRect(g_hWnd, &rcClient);
+
+    pEditorApp = CEditorApp::Create(g_hWnd,
+                            rcClient.right - rcClient.left,
+                            rcClient.bottom - rcClient.top);
+
+    if (nullptr == pEditorApp)
+        return FALSE;
+
+    CGameInstance* pGameInstance = CGameInstance::GetInstance();
+    Safe_AddRef(pGameInstance);
+
+    // Timer 등록
+    // 1. 기본 타이머
+    if (FAILED(pGameInstance->Add_Timer(TEXT("Timer_Default"))))
+        return E_FAIL;
+    // 2. 60 프레임 타이머
+    if (FAILED(pGameInstance->Add_Timer(TEXT("Timer_60"))))
+        return E_FAIL;
+
+    _float fTimeAcc = { };
+
+
+    // 게임 루프 (PeekMessage)
+    while (true)
     {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+            if (WM_QUIT == msg.message)
+                break;
+
+            if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+            {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+        }
+
+        pGameInstance->Compute_Timer(TEXT("Timer_Default"));
+        fTimeAcc += pGameInstance->Get_TimeDelta(TEXT("Timer_Default"));
+
+        if (fTimeAcc >= 1.f / 60.f)
+        {
+            pGameInstance->Compute_Timer(TEXT("Timer_60"));
+
+            pEditorApp->Update(pGameInstance->Get_TimeDelta(TEXT("Timer_60")));
+            pEditorApp->Render();
+
+            fTimeAcc = 0.f;
         }
     }
+
+    Safe_Release(pGameInstance);
+    Safe_Release(pEditorApp);
 
     return (int) msg.wParam;
 }
@@ -76,7 +136,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_EDITOR));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
     wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_EDITOR);
+    wcex.lpszMenuName   = nullptr;
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -97,8 +157,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+   // DXGI로 모니터 해상도 가져오기
+
+   // 실패시 기본값
+   _uint g_iWinSizeX = 1600;
+   _uint g_iWinSizeY = 900;
+   Get_MonitorResolution(&g_iWinSizeX, &g_iWinSizeY);
+
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_POPUP,
+                            0, 0,
+                            g_iWinSizeX,
+                            g_iWinSizeY,
+                            nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -107,6 +177,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
+
+   g_hWnd = hWnd;
 
    return TRUE;
 }
@@ -123,58 +195,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    // 시스템 메시지 먼저 처리
     switch (message)
     {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // 메뉴 선택을 구문 분석합니다:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_KEYMENU)  // Alt 키 메뉴 비활성화
+            return 0;
         break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: 여기에 hdc를 사용하는 그리기 코드를 추가합니다...
-            EndPaint(hWnd, &ps);
-        }
-        break;
+    case WM_CLOSE:
+        DestroyWindow(hWnd);
+        return 0;
     case WM_DESTROY:
         PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
+        return 0;
     }
-    return 0;
+
+    // ImGui 입력 처리
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+
+    return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
-// 정보 대화 상자의 메시지 처리기입니다.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
-}

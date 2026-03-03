@@ -16,6 +16,12 @@
     <Filter Include="00. EditorApp">
       <UniqueIdentifier>{edd53275-4fad-480e-810a-a7ec0a60b4af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="97. ImGui\ImGui">
+      <UniqueIdentifier>{b3e690e9-a228-4b85-b1a7-c9aa29a2d16f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="97. ImGui\ImGui\BackEnds">
+      <UniqueIdentifier>{620b1c6a-7742-48ee-b26b-f688c866e66a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Editor.cpp">
@@ -23,6 +29,30 @@
     </ClCompile>
     <ClCompile Include="..\Private\EditorApp.cpp">
       <Filter>00. EditorApp</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGuizmo\ImGuizmo.cpp">
+      <Filter>97. ImGui\ImGuizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGui\imgui.cpp">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGui\imgui_demo.cpp">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGui\imgui_draw.cpp">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGui\imgui_tables.cpp">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGui\imgui_widgets.cpp">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGui\backends\imgui_impl_dx11.cpp">
+      <Filter>97. ImGui\ImGui\BackEnds</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ImGui\backends\imgui_impl_win32.cpp">
+      <Filter>97. ImGui\ImGui\BackEnds</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +73,33 @@
     </ClInclude>
     <ClInclude Include="..\Public\EditorApp.h">
       <Filter>00. EditorApp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGuizmo\ImGuizmo.h">
+      <Filter>97. ImGui\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\imconfig.h">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\imgui.h">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\imgui_internal.h">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\imstb_rectpack.h">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\imstb_textedit.h">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\imstb_truetype.h">
+      <Filter>97. ImGui\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\backends\imgui_impl_dx11.h">
+      <Filter>97. ImGui\ImGui\BackEnds</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImGui\backends\imgui_impl_win32.h">
+      <Filter>97. ImGui\ImGui\BackEnds</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
