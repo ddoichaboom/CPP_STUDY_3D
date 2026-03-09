@@ -23,8 +23,42 @@ protected:
 	virtual ~CTransform() = default;
 
 public:
+	_vector Get_State(STATE eState)
+	{
+		return XMLoadFloat4(reinterpret_cast<_float4*>(&m_WorldMatrix.m[ETOUI(eState)]));
+	}
+
+	_float3 Get_Scale() 
+	{
+		return _float3{
+			XMVectorGetX(XMVector3Length(Get_State(STATE::RIGHT))),
+			XMVectorGetX(XMVector3Length(Get_State(STATE::UP))),
+			XMVectorGetX(XMVector3Length(Get_State(STATE::LOOK)))
+		};
+	}
+
+	void Set_State(STATE eState, _fvector vState)
+	{
+		XMStoreFloat4(reinterpret_cast<_float4*>(&m_WorldMatrix.m[ETOUI(eState)]), vState);
+	}
+
+public:
 	virtual HRESULT			Initialize_Prototype();
 	virtual HRESULT			Initialize(void* pArg);
+
+public:
+	void					Set_Scale(_float fScaleX = 1.f, _float fScaleY = 1.f, _float fScaleZ = 1.f);
+	void					Scaling(_float fScaleX = 1.f, _float fScaleY = 1.f, _float fScaleZ = 1.f);
+
+	void					Go_Straight(_float fTimeDelta);
+	void					Go_Backward(_float fTimeDelta);
+	void					Go_Left(_float fTimeDelta);
+	void					Go_Right(_float fTimeDelta);
+
+	void					Rotation(_fvector vAxis, _float fRadian);
+	void					Turn(_fvector vAxis, _float fTimeDelta);
+
+	void					LookAt(_fvector vAt);
 
 private:
 	_float4x4				m_WorldMatrix = {};
