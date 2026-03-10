@@ -85,6 +85,17 @@ HRESULT CGameInstance::End_Draw()
 	return m_pGraphic_Device->Present();
 }
 
+HRESULT CGameInstance::OnResize(_uint iWinSizeX, _uint iWinSizeY)
+{
+	if (nullptr == m_pGraphic_Device)
+		return S_OK;
+
+	m_iWinSizeX = iWinSizeX;
+	m_iWinSizeY = iWinSizeY;
+
+	return m_pGraphic_Device->OnResize(iWinSizeX, iWinSizeY);
+}
+
 void CGameInstance::Clear_Resources(_int iLevelIndex)
 {
 	if (-1 == iLevelIndex)

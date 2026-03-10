@@ -27,13 +27,15 @@ public:
 	_uint						Get_WinSizeX() const { return m_iWinSizeX; }
 	_uint						Get_WinSizeY() const { return m_iWinSizeY; }
 
+	HRESULT						OnResize(_uint iWinSizeX, _uint iWinSizeY);
+
 #pragma endregion
 
 #pragma region TIMER_MANAGER
 public:
 	_float						Get_TimeDelta(const _wstring& strTimerTag);
 	HRESULT						Add_Timer(const _wstring& strTimerTag);
-	void						Compute_Timer(const _wstring& strTimerTag);
+	void						Compute_Timer(const _wstring& strTimerTag); 
 #pragma endregion
 
 #pragma region LEVEL_MANAGER

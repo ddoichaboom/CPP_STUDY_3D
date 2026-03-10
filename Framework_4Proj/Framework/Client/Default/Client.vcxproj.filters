@@ -30,9 +30,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Client_Defines.h">
-      <Filter>99. Defines</Filter>
-    </ClInclude>
     <ClInclude Include="..\Public\MainApp.h">
       <Filter>00. MainApp</Filter>
     </ClInclude>

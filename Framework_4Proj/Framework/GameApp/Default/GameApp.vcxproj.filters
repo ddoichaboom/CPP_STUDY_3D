@@ -21,7 +21,7 @@
     <ClInclude Include="targetver.h">
       <Filter>98. Default</Filter>
     </ClInclude>
-    <ClInclude Include="GameApp_Defines.h">
+    <ClInclude Include="..\Public\GameApp_Defines.h">
       <Filter>99. Defines</Filter>
     </ClInclude>
   </ItemGroup>

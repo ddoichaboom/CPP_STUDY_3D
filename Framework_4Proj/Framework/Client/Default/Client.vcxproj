@@ -154,7 +154,6 @@ call ClientSDK_Update.bat</Command>
     <ClInclude Include="..\Public\Level_Logo.h" />
     <ClInclude Include="..\Public\Loader.h" />
     <ClInclude Include="..\Public\MainApp.h" />
-    <ClInclude Include="Client_Defines.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Private\BackGround.cpp" />

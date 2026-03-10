@@ -34,6 +34,9 @@ public:
 	/* 후면 버퍼를 전면버퍼로 교체한다.(백버퍼를 화면에 직접 보여준다.) */
 	HRESULT Present();
 
+	/* 창 크기 변경 시 SwapChain/RTV/DSV/Viewport 재생성 */
+	HRESULT OnResize(_uint iWinCX, _uint iWinCY);
+
 private:
 	// IDirect3DDevice9* == LPDIRECT3DDEVICE9 == ID3D11Device + ID3D11DeviceContext 	
 

@@ -103,6 +103,58 @@ HRESULT CGraphic_Device::Present()
 	return m_pSwapChain->Present(0, 0);
 }
 
+HRESULT CGraphic_Device::OnResize(_uint iWinCX, _uint iWinCY)
+{
+	if (nullptr == m_pSwapChain || nullptr == m_pDevice || nullptr == m_pDeviceContext)
+		return E_FAIL;
+
+	// OnResize 호출 로그 남기기
+//#ifdef _DEBUG
+//	WCHAR szBuf[128]{};
+//	swprintf_s(szBuf, L"[OnResize] %u x %u\n", iWinCX, iWinCY);
+//	OutputDebugStringW(szBuf);
+//#endif
+
+	/* 기존 렌더 타겟 바인딩 해제 */
+	m_pDeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+
+	/* 기존 뷰 해제 */
+	Safe_Release(m_pBackBufferRTV);
+	Safe_Release(m_pDepthStencilView);
+
+	/* SwapChain 버퍼 크기 변경 (0, UNKNOWN = 기존 설정 유지) */
+	if (FAILED(m_pSwapChain->ResizeBuffers(0, iWinCX, iWinCY, DXGI_FORMAT_UNKNOWN, 0)))
+		return E_FAIL;
+
+	/* 백 버퍼 렌더 타겟 뷰 재생성 */
+	if (FAILED(Ready_BackBufferRenderTargetView()))
+		return E_FAIL;
+
+	/* 깊이 스텐실 뷰 재생성 */
+	if (FAILED(Ready_DepthStencilView(iWinCX, iWinCY)))
+		return E_FAIL;
+
+	/* 렌더 타겟 재바인딩 */
+	ID3D11RenderTargetView* pRTVs[] = {
+		m_pBackBufferRTV,
+	};
+	m_pDeviceContext->OMSetRenderTargets(1, pRTVs, m_pDepthStencilView);
+
+	/* 뷰포트 갱신 */
+	D3D11_VIEWPORT ViewPortDesc;
+	ZeroMemory(&ViewPortDesc, sizeof(D3D11_VIEWPORT));
+	ViewPortDesc.TopLeftX = 0;
+	ViewPortDesc.TopLeftY = 0;
+	ViewPortDesc.Width = static_cast<_float>(iWinCX);
+	ViewPortDesc.Height = static_cast<_float>(iWinCY);
+	ViewPortDesc.MinDepth = 0.f;
+	ViewPortDesc.MaxDepth = 1.f;
+
+	m_pDeviceContext->RSSetViewports(1, &ViewPortDesc);
+
+	return S_OK;
+}
+
 
 HRESULT CGraphic_Device::Ready_SwapChain(HWND hWnd, WINMODE isWindowed, _uint iWinCX, _uint iWinCY)
 {
