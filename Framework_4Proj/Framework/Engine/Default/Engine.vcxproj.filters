@@ -52,6 +52,18 @@
     <Filter Include="07. Component\Transform">
       <UniqueIdentifier>{c6a32ce5-f5fc-421b-b902-ec56ab1a218b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="07. Component\VIBuffer">
+      <UniqueIdentifier>{5f7c4e1c-52de-48bc-9e0f-35a7fdc6b679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\VIBuffer\Cube">
+      <UniqueIdentifier>{0d8641c9-76cf-49ae-89ce-42ae2eccea68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\VIBuffer\Rect">
+      <UniqueIdentifier>{ecf4b7ad-26ee-4334-90ff-f680f8d60e96}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\VIBuffer\Terrain">
+      <UniqueIdentifier>{d06d3559-3c3a-4372-b026-5a77058e55e7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\Engine_Defines.h">
@@ -114,6 +126,12 @@
     <ClInclude Include="..\Public\Transform.h">
       <Filter>07. Component\Transform</Filter>
     </ClInclude>
+    <ClInclude Include="..\Public\VIBuffer.h">
+      <Filter>07. Component\VIBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\VIBuffer_Rect.h">
+      <Filter>07. Component\VIBuffer\Rect</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Private\Base.cpp">
@@ -157,6 +175,12 @@
     </ClCompile>
     <ClCompile Include="..\Private\GameInstance.cpp">
       <Filter>00. GameInstance</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\VIBuffer.cpp">
+      <Filter>07. Component\VIBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\VIBuffer_Rect.cpp">
+      <Filter>07. Component\VIBuffer\Rect</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
