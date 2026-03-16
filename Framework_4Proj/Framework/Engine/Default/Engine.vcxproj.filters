@@ -64,6 +64,9 @@
     <Filter Include="07. Component\VIBuffer\Terrain">
       <UniqueIdentifier>{d06d3559-3c3a-4372-b026-5a77058e55e7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="07. Component\Shader">
+      <UniqueIdentifier>{765d83ec-5f32-4863-9a36-ee34d80ec95f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\Engine_Defines.h">
@@ -132,6 +135,9 @@
     <ClInclude Include="..\Public\VIBuffer_Rect.h">
       <Filter>07. Component\VIBuffer\Rect</Filter>
     </ClInclude>
+    <ClInclude Include="..\Public\Shader.h">
+      <Filter>07. Component\Shader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Private\Base.cpp">
@@ -181,6 +187,9 @@
     </ClCompile>
     <ClCompile Include="..\Private\VIBuffer_Rect.cpp">
       <Filter>07. Component\VIBuffer\Rect</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Shader.cpp">
+      <Filter>07. Component\Shader</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

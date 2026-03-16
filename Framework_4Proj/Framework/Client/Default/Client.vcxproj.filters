@@ -28,6 +28,9 @@
     <Filter Include="02. GameObject\BackGround">
       <UniqueIdentifier>{e7a4701b-2804-4ee0-a47d-65910d8ebd9b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="98. ShaderFiles">
+      <UniqueIdentifier>{6d26a7e2-fc1f-4d61-8560-8201c5cf4691}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\MainApp.h">
@@ -68,5 +71,10 @@
     <ClCompile Include="..\Private\BackGround.cpp">
       <Filter>02. GameObject\BackGround</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\Resources\ShaderFiles\Shader_VtxTex.hlsl">
+      <Filter>98. ShaderFiles</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

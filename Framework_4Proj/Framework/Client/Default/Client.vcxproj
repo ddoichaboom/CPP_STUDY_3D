@@ -124,6 +124,11 @@
       <Command>cd /d $(SolutionDir)
 call ClientSDK_Update.bat</Command>
     </PostBuildEvent>
+    <FxCompile>
+      <AdditionalIncludeDirectories>../../Resources/ShaderFiles/</AdditionalIncludeDirectories>
+      <ShaderType>Effect</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -146,6 +151,11 @@ call ClientSDK_Update.bat</Command>
       <Command>cd /d $(SolutionDir)
 call ClientSDK_Update.bat</Command>
     </PostBuildEvent>
+    <FxCompile>
+      <AdditionalIncludeDirectories>../../Resources/ShaderFiles/</AdditionalIncludeDirectories>
+      <ShaderType>Effect</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\BackGround.h" />
@@ -162,6 +172,9 @@ call ClientSDK_Update.bat</Command>
     <ClCompile Include="..\Private\Level_Logo.cpp" />
     <ClCompile Include="..\Private\Loader.cpp" />
     <ClCompile Include="..\Private\MainApp.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\Resources\ShaderFiles\Shader_VtxTex.hlsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
