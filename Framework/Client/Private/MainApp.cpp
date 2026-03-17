@@ -59,17 +59,6 @@ HRESULT CMainApp::Ready_Prototype_For_Static()
 		CVIBuffer_Rect::Create(m_pDevice, m_pContext))))
 		return E_FAIL;
 
-	/*
-	D3D11_INPUT_ELEMENT_DESC
-	- LPCSTR SemanticName;
-    - UINT SemanticIndex;
-    - DXGI_FORMAT Format;
-    - UINT InputSlot;
-    - UINT AlignedByteOffset;
-    - D3D11_INPUT_CLASSIFICATION InputSlotClass;
-    - UINT InstanceDataStepRate;
-	*/
-
 	// (2) Shader 프로토타입 등록 (STATIC 레벨)
 	D3D11_INPUT_ELEMENT_DESC Elements[] = {
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},

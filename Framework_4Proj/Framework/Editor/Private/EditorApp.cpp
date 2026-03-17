@@ -61,14 +61,18 @@ HRESULT	CEditorApp::Render()
 #endif
 
 	// 4. Scene 렌더링
-	m_pGameInstance->Begin_Draw();
+	if(FAILED(m_pGameInstance->Begin_Draw()))
+		return E_FAIL;
+
 	//m_pGameInstance->Draw();
+		
 
 	// 5. ImGui 드로우 (씬 위에 오버레이)
 	Render_ImGui();
 
 	// 6. Present
-	m_pGameInstance->End_Draw();
+	if (FAILED(m_pGameInstance->End_Draw()))
+		return E_FAIL;
 
 	return S_OK;
 }

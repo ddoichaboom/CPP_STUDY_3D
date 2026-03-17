@@ -24,6 +24,10 @@ HRESULT CMainApp::Initialize(HWND hWnd, _uint iWinSizeX, _uint iWinSizeY)
 		return E_FAIL;
 	}
 
+	// 엔진 초기화 후 STATIC 레벨 프로토타입 등록
+	if (FAILED(Ready_Prototype_For_Static()))
+		return E_FAIL;
+
 	if (FAILED(Start_Level(LEVEL::LOGO)))
 		return E_FAIL;
 
@@ -42,6 +46,32 @@ HRESULT CMainApp::Render()
 	FAILED_CHECK(m_pGameInstance->Draw());
 
 	FAILED_CHECK(m_pGameInstance->End_Draw());
+
+	return S_OK;
+}
+
+HRESULT CMainApp::Ready_Prototype_For_Static()
+{
+	// (1) VIBuffer_Rect 프로토타입 등록 (STATIC 레벨)
+	if (FAILED(m_pGameInstance->Add_Prototype(
+		ETOUI(LEVEL::STATIC),
+		TEXT("Prototype_Component_VIBuffer_Rect"),
+		CVIBuffer_Rect::Create(m_pDevice, m_pContext))))
+		return E_FAIL;
+
+	// (2) Shader 프로토타입 등록 (STATIC 레벨)
+	D3D11_INPUT_ELEMENT_DESC Elements[] = {
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+	};
+
+	if (FAILED(m_pGameInstance->Add_Prototype(
+		ETOUI(LEVEL::STATIC),
+		TEXT("Prototype_Component_Shader_VtxTex"),
+		CShader::Create(m_pDevice, m_pContext,
+			TEXT("../../Resources/ShaderFiles/Shader_VtxTex.hlsl"),
+			Elements, 2))))
+		return E_FAIL;
 
 	return S_OK;
 }

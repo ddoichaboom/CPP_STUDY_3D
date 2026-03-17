@@ -8,11 +8,7 @@ CBackGround::CBackGround(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 
 CBackGround::CBackGround(const CBackGround& Prototype)
 	: CGameObject { Prototype }
-	, m_pShaderCom { Prototype.m_pShaderCom }
-	, m_pVIBufferCom { Prototype.m_pVIBufferCom }
 {
-	Safe_AddRef(m_pShaderCom);
-	Safe_AddRef(m_pVIBufferCom);
 }
 
 HRESULT CBackGround::Initialize_Prototype()

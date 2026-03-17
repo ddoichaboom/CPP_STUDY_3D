@@ -7,14 +7,14 @@ float4x4 g_WorldMatrix, g_ViewMatrix, g_ProjMatrix;
 // 셰이더의 입력 구조체는 C++ 측 정점 구조체 VTXTEX와 1:1 대응 해야 함.
 struct VS_IN
 {
-    float3 vPosition;
-    float2 vTexcoord;
+    float3 vPosition : POSITION;
+    float2 vTexcoord : TEXCOORD0;
 };
 
 struct VS_OUT
 {
-    float4 vPosition;
-    float2 vTexcoord;
+    float4 vPosition : SV_POSITION;
+    float2 vTexcoord : TEXCOORD0;
 };
 
 // 정점 셰이더
@@ -22,24 +22,55 @@ VS_OUT VS_MAIN(VS_IN In)
 {
     VS_OUT Out;
     
-    // 1단계 - 월드 변환 : 로컬 -> 월드 (오브젝트를 세계에 배치)
-    float4 vPosition = mul(float4(In.vPosition, 1.f), g_WorldMatrix);
+    //// 1단계 - 월드 변환 : 로컬 -> 월드 (오브젝트를 세계에 배치)
+    //float4 vPosition = mul(float4(In.vPosition, 1.f), g_WorldMatrix);
     
-    // 2단계 - 뷰 변환 : 월드 -> 뷰 (카메라 기준으로 변환)
-    vPosition = mul(vPosition, g_ViewMatrix);
+    //// 2단계 - 뷰 변환 : 월드 -> 뷰 (카메라 기준으로 변환)
+    //vPosition       = mul(vPosition, g_ViewMatrix);
     
-    // 3단계 - 투영 변환 : 뷰 -> 투영 (원근감 적용, 클리핑 준비
-    vPosition = mul(vPosition, g_ProjMatrix);
+    //// 3단계 - 투영 변환 : 뷰 -> 투영 (원근감 적용, 클리핑 준비
+    //vPosition       = mul(vPosition, g_ProjMatrix);
     
     // 클립 좌표
-    Out.vPosition = vPosition;
+    //Out.vPosition = vPosition;
+    Out.vPosition = float4(In.vPosition, 1.f);
     Out.vTexcoord = In.vTexcoord;
     
     return Out;
 }
 
-// 픽셀 셰이더
-//PS_MAIN()
-//{
+// w 나누기 연산 : 2차원 투영 스페이스로의 변환
+// 뷰 포트로의 변환 (윈도우 좌표로의 변환)
+// 레스터라이즈 (정점 정보를 기반으로 해서 픽셀의 정보를 생성)
 
-//}
+struct PS_IN
+{
+    float4 vPosition : SV_POSITION;
+    float2 vTexcoord : TEXCOORD0;
+};
+
+struct PS_OUT
+{
+    float4 vColor : SV_TARGET0;
+};
+
+// 픽셀 셰이더 - 픽셀의 최종적인 색을 결정해준다
+// 따라서 반환 타입 구조체는 멤버로 float4  vColor를 갖는다.
+
+PS_OUT PS_MAIN(PS_IN In)
+{
+    PS_OUT Out;
+    
+    Out.vColor = In.vTexcoord.y; // 임시로 0부터 1까지 그라데이션처럼 표현 (검은색 ~ 흰색) 
+    
+    return Out;
+}
+
+technique11 DefaultTechnique
+{
+    pass DefaultPass
+    {
+        VertexShader = compile vs_5_0 VS_MAIN();
+        PixelShader = compile ps_5_0 PS_MAIN();
+    }
+}

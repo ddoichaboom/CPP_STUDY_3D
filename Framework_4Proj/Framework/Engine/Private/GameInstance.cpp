@@ -2,7 +2,6 @@
 #include "Graphic_Device.h"
 #include "Timer_Manager.h"
 #include "Level_Manager.h"
-#include "Prototype_Manager.h"
 #include "Object_Manager.h"
 #include "Renderer.h"
 
@@ -20,6 +19,7 @@ HRESULT CGameInstance::Initialize_Engine(const ENGINE_DESC& EngineDesc, ID3D11De
 	m_hWnd = EngineDesc.hWnd;
 	m_iWinSizeX = EngineDesc.iViewportWidth;
 	m_iWinSizeY = EngineDesc.iViewportHeight;
+	m_eWinMode = EngineDesc.eWinMode;
 
 	m_pGraphic_Device = CGraphic_Device::Create(EngineDesc.hWnd, EngineDesc.eWinMode, EngineDesc.iViewportWidth, EngineDesc.iViewportHeight, ppDevice, ppContext);
 	if (nullptr == m_pGraphic_Device)
@@ -88,6 +88,10 @@ HRESULT CGameInstance::End_Draw()
 HRESULT CGameInstance::OnResize(_uint iWinSizeX, _uint iWinSizeY)
 {
 	if (nullptr == m_pGraphic_Device)
+		return S_OK;
+
+	// 동일 크기면 스킵
+	if (m_iWinSizeX == iWinSizeX && m_iWinSizeY == iWinSizeY)
 		return S_OK;
 
 	m_iWinSizeX = iWinSizeX;

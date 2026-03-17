@@ -56,7 +56,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     pMainApp = CMainApp::Create(g_hWnd, g_iWinSizeX, g_iWinSizeY);
     if (nullptr == pMainApp)
         return FALSE;
-
+    
     CGameInstance* pGameInstance = CGameInstance::GetInstance();
     Safe_AddRef(pGameInstance);
 
@@ -202,49 +202,49 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_ENTERSIZEMOVE:
-    {
-        g_bResizing = true;
-    }
-    return 0;
-    case WM_EXITSIZEMOVE:
-    {
-        g_bResizing = false;
+    //case WM_ENTERSIZEMOVE:
+    //{
+    //    g_bResizing = true;
+    //}
+    //return 0;
+    //case WM_EXITSIZEMOVE:
+    //{
+    //    g_bResizing = false;
 
-        RECT rcClient{};
-        GetClientRect(hWnd, &rcClient);
+    //    RECT rcClient{};
+    //    GetClientRect(hWnd, &rcClient);
 
-        _uint iWidth = rcClient.right - rcClient.left;
-        _uint iHeight = rcClient.bottom - rcClient.top;
+    //    _uint iWidth = rcClient.right - rcClient.left;
+    //    _uint iHeight = rcClient.bottom - rcClient.top;
 
-        if (iWidth == 0 || iHeight == 0)
-            break;
+    //    if (iWidth == 0 || iHeight == 0)
+    //        break;
 
-        CGameInstance* pGameInstance = CGameInstance::GetInstance();
-        if (nullptr != pGameInstance)
-            pGameInstance->OnResize(iWidth, iHeight);
-    }
-    return 0;
-    case WM_SIZE:
-    {
+    //    CGameInstance* pGameInstance = CGameInstance::GetInstance();
+    //    if (nullptr != pGameInstance)
+    //        pGameInstance->OnResize(iWidth, iHeight);
+    //}
+    //return 0;
+    //case WM_SIZE:
+    //{
 
-        if (wParam == SIZE_MINIMIZED)
-            break;
+    //    if (wParam == SIZE_MINIMIZED)
+    //        break;
 
-        if (g_bResizing)
-            break;
+    //    _uint iWidth = LOWORD(lParam);
+    //    _uint iHeight = HIWORD(lParam);
 
-        _uint iWidth = LOWORD(lParam);
-        _uint iHeight = HIWORD(lParam);
+    //    if (iWidth == 0 || iHeight == 0)
+    //        break;
 
-        if (iWidth == 0 || iHeight == 0)
-            break;
-
-        CGameInstance* pGameInstance = CGameInstance::GetInstance();
-        if (nullptr != pGameInstance)
-            pGameInstance->OnResize(iWidth, iHeight);
-    }
-    break;
+    //    if (!g_bResizing)
+    //    {
+    //        CGameInstance* pGameInstance = CGameInstance::GetInstance();
+    //        if (nullptr != pGameInstance)
+    //            pGameInstance->OnResize(iWidth, iHeight);
+    //    }
+    //}
+    //return DefWindowProc(hWnd, message, wParam, lParam);
     case WM_PAINT:
         {
             PAINTSTRUCT ps;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Base.h"
+#include "Prototype_Manager.h"
 
 NS_BEGIN(Engine)
 
@@ -28,6 +28,8 @@ public:
 	_uint						Get_WinSizeY() const { return m_iWinSizeY; }
 
 	HRESULT						OnResize(_uint iWinSizeX, _uint iWinSizeY);
+	WINMODE						Get_WinMode() const { return m_eWinMode; }
+	void						Set_WinMode(WINMODE eMode) { m_eWinMode = eMode; }
 
 #pragma endregion
 
@@ -68,6 +70,7 @@ private:
 	HWND						m_hWnd;
 	_uint						m_iWinSizeX;
 	_uint						m_iWinSizeY;
+	WINMODE						m_eWinMode = { WINMODE::WIN };
 	
 public:
 	void						Release_Engine();
