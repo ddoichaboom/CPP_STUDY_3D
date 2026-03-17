@@ -7,8 +7,12 @@ CBackGround::CBackGround(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 }
 
 CBackGround::CBackGround(const CBackGround& Prototype)
-	: CGameObject{ Prototype }
+	: CGameObject { Prototype }
+	, m_pShaderCom { Prototype.m_pShaderCom }
+	, m_pVIBufferCom { Prototype.m_pVIBufferCom }
 {
+	Safe_AddRef(m_pShaderCom);
+	Safe_AddRef(m_pVIBufferCom);
 }
 
 HRESULT CBackGround::Initialize_Prototype()
@@ -20,6 +24,9 @@ HRESULT CBackGround::Initialize(void* pArg)
 {
 	auto pDesc = static_cast<BACKGROUND_DESC*>(pArg);
 	if (FAILED(__super::Initialize(pDesc)))
+		return E_FAIL;
+
+	if (FAILED(Ready_Components()))
 		return E_FAIL;
 
 	return S_OK;
@@ -43,6 +50,25 @@ void CBackGround::Late_Update(_float fTimeDelta)
 
 HRESULT CBackGround::Render()
 {
+	m_pShaderCom->Begin(0);
+
+	m_pVIBufferCom->Bind_Resources();
+
+	m_pVIBufferCom->Render();
+
+	return S_OK;
+}
+
+HRESULT CBackGround::Ready_Components()
+{
+	m_pShaderCom = dynamic_cast<CShader*>(m_pGameInstance->Clone_Prototype(PROTOTYPE::COMPONENT, ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_Shader_VtxTex")));
+	if (nullptr == m_pShaderCom)
+		return E_FAIL;
+
+	m_pVIBufferCom = dynamic_cast<CVIBuffer_Rect*>(m_pGameInstance->Clone_Prototype(PROTOTYPE::COMPONENT, ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_VIBuffer_Rect")));
+	if (nullptr == m_pVIBufferCom)
+		return E_FAIL;
+
 	return S_OK;
 }
 
@@ -75,4 +101,7 @@ CGameObject* CBackGround::Clone(void* pArg)
 void CBackGround::Free()
 {
 	__super::Free();
+
+	Safe_Release(m_pShaderCom);
+	Safe_Release(m_pVIBufferCom);
 }

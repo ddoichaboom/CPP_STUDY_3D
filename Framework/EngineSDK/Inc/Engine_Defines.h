@@ -3,6 +3,10 @@
 
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <DirectXCollision.h>
+
+#include <d3dcompiler.h>
+#include <fx11/d3dx11effect.h>
 
 using namespace DirectX;
 

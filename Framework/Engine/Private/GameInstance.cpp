@@ -2,7 +2,6 @@
 #include "Graphic_Device.h"
 #include "Timer_Manager.h"
 #include "Level_Manager.h"
-#include "Prototype_Manager.h"
 #include "Object_Manager.h"
 #include "Renderer.h"
 

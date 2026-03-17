@@ -12,16 +12,20 @@ private:
 	virtual ~CShader() = default;
 
 public:
-	virtual HRESULT				Initialize_Prototype(const _tchar* pShaderFilePath);
+	virtual HRESULT				Initialize_Prototype(const _tchar* pShaderFilePath, const D3D11_INPUT_ELEMENT_DESC* pElements, _uint iNumElements);
 	virtual HRESULT				Initialize(void* pArg);
 
+public:
+	HRESULT						Begin(_uint iPassIndex);
+
 private:
-	// FX11 Effect 객체를 소유. 셰이더 컴파일 결과가 여기 저장됨
-	ID3DX11Effect*				m_pEffect = { nullptr };
+	_uint						m_iNumPasses = {};
+	ID3DX11Effect*				m_pEffect = { nullptr };	// FX11 Effect 객체를 소유. 셰이더 컴파일 결과가 여기 저장됨
+	vector<ID3D11InputLayout*>	m_vInputLayouts;			// pass 별 InputLayout
 
 
 public:
-	static CShader*				Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, const _tchar* pShaderFilePath);
+	static CShader*				Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, const _tchar* pShaderFilePath, const D3D11_INPUT_ELEMENT_DESC* pElements, _uint iNumElements);
 	virtual CComponent*			Clone(void* pArg) override;
 	virtual void				Free() override;
 };
