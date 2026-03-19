@@ -3,6 +3,18 @@
 
 // HLSL 코드 내에서 사용할 전역 변수 선언
 float4x4 g_WorldMatrix, g_ViewMatrix, g_ProjMatrix;
+texture2D g_Texture;
+
+// Sampler State : 필터링, 래핑 규칙 선언
+sampler DefaultSampler = sampler_state
+{
+    // 텍스처 확대/축소 시 보간 방법 
+    Filter = MIN_MAG_MIP_LINEAR;
+
+    // 텍스처 좌표가 [0, 1] 범위를 벗어날 때의 처리 (wrap : 반복)
+    AddressU = wrap;
+    AddressV = wrap;
+};
 
 // 셰이더의 입력 구조체는 C++ 측 정점 구조체 VTXTEX와 1:1 대응 해야 함.
 struct VS_IN
@@ -22,18 +34,17 @@ VS_OUT VS_MAIN(VS_IN In)
 {
     VS_OUT Out;
     
-    //// 1단계 - 월드 변환 : 로컬 -> 월드 (오브젝트를 세계에 배치)
-    //float4 vPosition = mul(float4(In.vPosition, 1.f), g_WorldMatrix);
+    // 1단계 - 월드 변환 : 로컬 -> 월드 (오브젝트를 세계에 배치)
+    float4 vPosition = mul(float4(In.vPosition, 1.f), g_WorldMatrix);
     
-    //// 2단계 - 뷰 변환 : 월드 -> 뷰 (카메라 기준으로 변환)
-    //vPosition       = mul(vPosition, g_ViewMatrix);
+    // 2단계 - 뷰 변환 : 월드 -> 뷰 (카메라 기준으로 변환)
+    vPosition = mul(vPosition, g_ViewMatrix);
     
-    //// 3단계 - 투영 변환 : 뷰 -> 투영 (원근감 적용, 클리핑 준비
-    //vPosition       = mul(vPosition, g_ProjMatrix);
+    // 3단계 - 투영 변환 : 뷰 -> 투영 (원근감 적용, 클리핑 준비
+    vPosition = mul(vPosition, g_ProjMatrix);
     
     // 클립 좌표
-    //Out.vPosition = vPosition;
-    Out.vPosition = float4(In.vPosition, 1.f);
+    Out.vPosition = vPosition;
     Out.vTexcoord = In.vTexcoord;
     
     return Out;
@@ -61,7 +72,13 @@ PS_OUT PS_MAIN(PS_IN In)
 {
     PS_OUT Out;
     
-    Out.vColor = In.vTexcoord.y; // 임시로 0부터 1까지 그라데이션처럼 표현 (검은색 ~ 흰색) 
+    Out.vColor = g_Texture.Sample(DefaultSampler, In.vTexcoord);
+    
+    // Alpha Test 
+    if (Out.vColor.a < 0.1f)
+        discard;
+    
+    Out.vColor.gb = Out.vColor.r; // 회색처럼 표시 
     
     return Out;
 }

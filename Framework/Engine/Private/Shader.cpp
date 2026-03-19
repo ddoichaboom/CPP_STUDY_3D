@@ -97,6 +97,38 @@ HRESULT CShader::Begin(_uint iPassIndex)
 	return S_OK;
 }
 
+HRESULT CShader::Bind_Matrix(const _char* pConstantName, const _float4x4* pMatrix)
+{
+	// (1) Effect에서 이름으로 변수 검색
+	ID3DX11EffectVariable* pVariable = m_pEffect->GetVariableByName(pConstantName);
+	if (!pVariable->IsValid())
+		return E_FAIL;
+
+	// (2) 행렬 타입으로 캐스팅
+	ID3DX11EffectMatrixVariable* pMatrixVariable = pVariable->AsMatrix();
+	if (!pMatrixVariable->IsValid())
+		return E_FAIL;
+
+	// (3) HLSL 전역 변수에 행렬 데이터 설정
+	return pMatrixVariable->SetMatrix(reinterpret_cast<const _float*>(pMatrix));
+}
+
+HRESULT CShader::Bind_SRV(const _char* pConstantName, ID3D11ShaderResourceView* pSRV)
+{
+	// (1) Effect에서 이름으로 변수 검색
+	ID3DX11EffectVariable* pVariable = m_pEffect->GetVariableByName(pConstantName);
+	if (!pVariable->IsValid())
+		return E_FAIL;
+
+	// (2) ShaderResource타입으로 캐스팅
+	ID3DX11EffectShaderResourceVariable* pSRVariable = pVariable->AsShaderResource();
+	if (!pSRVariable->IsValid())
+		return E_FAIL;
+
+	// (3) HLSL 전역 변수에 SRV 바인딩
+	return pSRVariable->SetResource(pSRV);
+}
+
 CShader* CShader::Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, const _tchar* pShaderFilePath, const D3D11_INPUT_ELEMENT_DESC* pElements, _uint iNumElements)
 {
 	CShader* pInstance = new CShader(pDevice, pContext);

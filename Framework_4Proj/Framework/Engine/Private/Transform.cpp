@@ -1,4 +1,5 @@
 #include "Transform.h"
+#include "Shader.h"
 
 CTransform::CTransform(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 	: CComponent{ pDevice, pContext }
@@ -8,12 +9,15 @@ CTransform::CTransform(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 
 CTransform::CTransform(const CTransform& Prototype)
 	: CComponent{ Prototype }
+	, m_WorldMatrix{ Prototype.m_WorldMatrix }
 {
 
 }
 
 HRESULT CTransform::Initialize_Prototype()
 {
+	XMStoreFloat4x4(&m_WorldMatrix, XMMatrixIdentity());		// 항등 행렬로 초기화
+
 	return S_OK;
 }
 
@@ -30,6 +34,12 @@ HRESULT CTransform::Initialize(void* pArg)
 	m_fSpeedPerSec		= pDesc->fSpeedPerSec;
 
 	return S_OK;
+}
+
+HRESULT CTransform::Bind_ShaderResource(CShader* pShader, const _char* pConstantName)
+{
+	// 자신의 월드 행렬을 셰이더의 지정된 상수에 바인딩
+	return pShader->Bind_Matrix(pConstantName, &m_WorldMatrix);
 }
 
 void CTransform::Set_Scale(_float fScaleX, _float fScaleY, _float fScaleZ)

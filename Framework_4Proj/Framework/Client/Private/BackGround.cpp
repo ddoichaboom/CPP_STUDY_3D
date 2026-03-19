@@ -46,11 +46,17 @@ void CBackGround::Late_Update(_float fTimeDelta)
 
 HRESULT CBackGround::Render()
 {
-	m_pShaderCom->Begin(0);
+	if (FAILED(Bind_ShaderResources()))
+		return E_FAIL;
 
-	m_pVIBufferCom->Bind_Resources();
+	if (FAILED(m_pShaderCom->Begin(0)))
+		return E_FAIL;
 
-	m_pVIBufferCom->Render();
+	if (FAILED(m_pVIBufferCom->Bind_Resources()))
+		return E_FAIL;
+
+	if (FAILED(m_pVIBufferCom->Render()))
+		return E_FAIL;
 
 	return S_OK;
 }
@@ -63,6 +69,30 @@ HRESULT CBackGround::Ready_Components()
 
 	m_pVIBufferCom = dynamic_cast<CVIBuffer_Rect*>(m_pGameInstance->Clone_Prototype(PROTOTYPE::COMPONENT, ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_VIBuffer_Rect")));
 	if (nullptr == m_pVIBufferCom)
+		return E_FAIL;
+
+	m_pTextureCom = dynamic_cast<CTexture*>(m_pGameInstance->Clone_Prototype(PROTOTYPE::COMPONENT, ETOUI(LEVEL::LOGO), TEXT("Prototype_Component_Texture_BackGround")));
+	if (nullptr == m_pTextureCom)
+		return E_FAIL;
+
+	return S_OK;
+}
+
+HRESULT CBackGround::Bind_ShaderResources()
+{
+	if (FAILED(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix")))
+		return E_FAIL;
+
+	_float4x4		IdentityMatrix{};
+	XMStoreFloat4x4(&IdentityMatrix, XMMatrixIdentity());
+
+	if (FAILED(m_pShaderCom->Bind_Matrix("g_ViewMatrix", &IdentityMatrix)))
+		return E_FAIL;
+
+	if (FAILED(m_pShaderCom->Bind_Matrix("g_ProjMatrix", &IdentityMatrix)))
+		return E_FAIL;
+
+	if (FAILED(m_pTextureCom->Bind_ShaderResource(m_pShaderCom, "g_Texture", 1)))
 		return E_FAIL;
 
 	return S_OK;
@@ -100,4 +130,5 @@ void CBackGround::Free()
 
 	Safe_Release(m_pShaderCom);
 	Safe_Release(m_pVIBufferCom);
+	Safe_Release(m_pTextureCom);
 }
