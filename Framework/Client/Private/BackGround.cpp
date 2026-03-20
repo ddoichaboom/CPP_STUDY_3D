@@ -1,13 +1,15 @@
 #include "BackGround.h"
 #include "GameInstance.h"
+#include "Terrain.h"
+#include "Transform_2D.h"
 
 CBackGround::CBackGround(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
-	: CGameObject { pDevice, pContext }
+	: CUIObject{ pDevice, pContext }
 {
 }
 
 CBackGround::CBackGround(const CBackGround& Prototype)
-	: CGameObject { Prototype }
+	: CUIObject{ Prototype }
 {
 }
 
@@ -18,12 +20,18 @@ HRESULT CBackGround::Initialize_Prototype()
 
 HRESULT CBackGround::Initialize(void* pArg)
 {
-	auto pDesc = static_cast<BACKGROUND_DESC*>(pArg);
-	if (FAILED(__super::Initialize(pDesc)))
-		return E_FAIL;
+	BACKGROUND_DESC			Desc{};
 
-	if (FAILED(Ready_Components()))
-		return E_FAIL;
+	Desc.fSpeedPerSec = 10.f;
+	Desc.fCenterX = g_iWinSizeX * 0.5f;
+	Desc.fCenterY = g_iWinSizeY * 0.5f;
+	Desc.fSizeX = g_iWinSizeX;
+	Desc.fSizeY = g_iWinSizeY;
+
+	FAILED_CHECK(__super::Initialize(&Desc));
+
+	FAILED_CHECK(Ready_Components());
+
 
 	return S_OK;
 }
@@ -35,65 +43,58 @@ void CBackGround::Priority_Update(_float fTimeDelta)
 
 void CBackGround::Update(_float fTimeDelta)
 {
-	int a = 10;		// 중단점 용도
+	static_cast<CTransform_2D*>(m_pTransformCom)->Move_Y(fTimeDelta);
 }
 
 void CBackGround::Late_Update(_float fTimeDelta)
 {
 	// 업데이트 다 끝날 시점(렌더 직전)에 자기 자신을 해당되는 렌더 그룹에 등록
-	m_pGameInstance->Add_RenderGroup(RENDERID::PRIORITY, this);
+	m_pGameInstance->Add_RenderGroup(RENDERID::UI, this);
 }
 
 HRESULT CBackGround::Render()
 {
-	if (FAILED(Bind_ShaderResources()))
-		return E_FAIL;
+	FAILED_CHECK(Bind_ShaderResources());
 
-	if (FAILED(m_pShaderCom->Begin(0)))
-		return E_FAIL;
+	FAILED_CHECK(m_pShaderCom->Begin(0));
 
-	if (FAILED(m_pVIBufferCom->Bind_Resources()))
-		return E_FAIL;
+	FAILED_CHECK(m_pVIBufferCom->Bind_Resources());
 
-	if (FAILED(m_pVIBufferCom->Render()))
-		return E_FAIL;
+	FAILED_CHECK(m_pVIBufferCom->Render());
 
 	return S_OK;
 }
 
 HRESULT CBackGround::Ready_Components()
 {
-	m_pShaderCom = dynamic_cast<CShader*>(m_pGameInstance->Clone_Prototype(PROTOTYPE::COMPONENT, ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_Shader_VtxTex")));
-	if (nullptr == m_pShaderCom)
-		return E_FAIL;
+	// Com_Shader
+	FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_Shader_VtxTex"),
+		TEXT("Com_Shader"), reinterpret_cast<CComponent**>(&m_pShaderCom)));
 
-	m_pVIBufferCom = dynamic_cast<CVIBuffer_Rect*>(m_pGameInstance->Clone_Prototype(PROTOTYPE::COMPONENT, ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_VIBuffer_Rect")));
-	if (nullptr == m_pVIBufferCom)
-		return E_FAIL;
+	// Com_VIBuffer
+	FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_VIBuffer_Rect"),
+		TEXT("Com_VIBuffer"), reinterpret_cast<CComponent**>(&m_pVIBufferCom)));
 
-	m_pTextureCom = dynamic_cast<CTexture*>(m_pGameInstance->Clone_Prototype(PROTOTYPE::COMPONENT, ETOUI(LEVEL::LOGO), TEXT("Prototype_Component_Texture_BackGround")));
-	if (nullptr == m_pTextureCom)
-		return E_FAIL;
+	// Com_Texture
+	FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::LOGO), TEXT("Prototype_Component_Texture_BackGround"),
+		TEXT("Com_Texture"), reinterpret_cast<CComponent**>(&m_pTextureCom)));
 
 	return S_OK;
 }
 
 HRESULT CBackGround::Bind_ShaderResources()
 {
-	if (FAILED(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix")))
-		return E_FAIL;
+	// (1) World 행렬 바인딩
+	FAILED_CHECK(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix"));
 
-	_float4x4		IdentityMatrix{};
-	XMStoreFloat4x4(&IdentityMatrix, XMMatrixIdentity());
+	// (2) View 행렬 바인딩
+	FAILED_CHECK(__super::Bind_ShaderResource(m_pShaderCom, "g_ViewMatrix", D3DTS::VIEW));
 
-	if (FAILED(m_pShaderCom->Bind_Matrix("g_ViewMatrix", &IdentityMatrix)))
-		return E_FAIL;
+	// (3) Projection 행렬 바인딩
+	FAILED_CHECK(__super::Bind_ShaderResource(m_pShaderCom, "g_ProjMatrix", D3DTS::PROJ));
 
-	if (FAILED(m_pShaderCom->Bind_Matrix("g_ProjMatrix", &IdentityMatrix)))
-		return E_FAIL;
-
-	if (FAILED(m_pTextureCom->Bind_ShaderResource(m_pShaderCom, "g_Texture", 1)))
-		return E_FAIL;
+	// (4) Texture 바인딩
+	FAILED_CHECK(m_pTextureCom->Bind_ShaderResource(m_pShaderCom, "g_Texture", 0));
 
 	return S_OK;
 }

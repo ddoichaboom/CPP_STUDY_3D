@@ -7,7 +7,7 @@
 
 NS_BEGIN(Engine)
 
-class ENGINE_DLL CTransform final : public CComponent
+class ENGINE_DLL CTransform abstract : public CComponent
 {
 public:
 	typedef struct tagTransformDesc
@@ -53,24 +53,13 @@ public:
 	void					Set_Scale(_float fScaleX = 1.f, _float fScaleY = 1.f, _float fScaleZ = 1.f);
 	void					Scaling(_float fScaleX = 1.f, _float fScaleY = 1.f, _float fScaleZ = 1.f);
 
-	void					Go_Straight(_float fTimeDelta);
-	void					Go_Backward(_float fTimeDelta);
-	void					Go_Left(_float fTimeDelta);
-	void					Go_Right(_float fTimeDelta);
-
-	void					Rotation(_fvector vAxis, _float fRadian);
-	void					Turn(_fvector vAxis, _float fTimeDelta);
-
-	void					LookAt(_fvector vAt);
-
-private:
+protected:
 	_float4x4				m_WorldMatrix = {};
 	_float					m_fSpeedPerSec = {};
 	_float					m_fRotationPerSec = {};
 
 public:
-	static	CTransform*		Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext);
-	virtual CComponent*		Clone(void* pArg) override;
+	virtual CComponent*		Clone(void* pArg) PURE;
 	virtual void			Free() override;
 };
 

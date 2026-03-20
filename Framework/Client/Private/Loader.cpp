@@ -1,6 +1,13 @@
 #include "Loader.h"
+
+// ENGINE
 #include "GameInstance.h"
+
+// LOGO
 #include "BackGround.h"
+
+// GAMEPLAY
+#include "Terrain.h"
 
 CLoader::CLoader(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 	: m_pDevice { pDevice }
@@ -25,6 +32,7 @@ unsigned int APIENTRY ThreadMain(void* pArg)
 HRESULT CLoader::Initialize(LEVEL eNextLevelID)
 {
 	m_eNextLevelID = eNextLevelID;
+
 	InitializeCriticalSection(&m_CriticalSection);
 
 	// eNextLevelID 에 필요한 자원을 로딩하는 작업을 수행한다.
@@ -102,7 +110,8 @@ HRESULT CLoader::Ready_Resources_For_Logo()
 HRESULT CLoader::Ready_Resources_For_GamePlay()
 {
 	lstrcpy(m_szLoadingText, TEXT("텍스쳐 로딩 중"));
-
+	FAILED_CHECK(m_pGameInstance->Add_Prototype(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Texture_Terrain"),
+		CTexture::Create(m_pDevice, m_pContext, TEXT("../Bin/Resources/Textures/Terrain/Tile%d.jpg"), 1)));
 
 	lstrcpy(m_szLoadingText, TEXT("셰이더 로딩 중"));
 
@@ -112,6 +121,8 @@ HRESULT CLoader::Ready_Resources_For_GamePlay()
 
 	lstrcpy(m_szLoadingText, TEXT("객체원형 로딩 중"));
 
+	// Prototype_GameObject_Terrain
+	FAILED_CHECK(m_pGameInstance->Add_Prototype(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_GameObject_Terrain"), CTerrain::Create(m_pDevice, m_pContext)));
 
 	lstrcpy(m_szLoadingText, TEXT("로딩이 완료되었습니다."));
 
