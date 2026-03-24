@@ -12,18 +12,42 @@ CVIBuffer_Terrain::CVIBuffer_Terrain(const CVIBuffer_Terrain& Prototype)
 
 HRESULT CVIBuffer_Terrain::Initialize_Prototype(const _tchar* pHeightMapFilePath)
 {
-    m_iNumVertexBuffers     = 1;
-    m_iNumVertices          = 4;
-    m_iVertexStride         = sizeof(VTXTEX);
+    // (1) BMP Height Map 읽기 
+    _ulong              dwByte = { };
+    HANDLE              hFile = CreateFile(pHeightMapFilePath, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (hFile == 0)
+        return E_FAIL;
 
-    m_iNumIndices           = 6;
-    m_iIndexStride          = 2;
-    m_eIndexFormat          = DXGI_FORMAT_R16_UINT;
+    BITMAPFILEHEADER    fh{};
+    BITMAPINFOHEADER    ih{};
+    _uint* pPixels = { nullptr };
 
-    m_ePrimitiveType        = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    ReadFile(hFile, &fh, sizeof fh, &dwByte, nullptr);
+    ReadFile(hFile, &ih, sizeof ih, &dwByte, nullptr);
+    m_iNumVerticesX                         = ih.biWidth;
+    m_iNumVerticesZ                         = ih.biHeight;
+    m_iNumVertices                          = m_iNumVerticesX * m_iNumVerticesZ;
 
-    // (1) 사각형을 표현하기 위한 정점.
-    D3D11_BUFFER_DESC               VertexBufferDesc{};
+    pPixels = new _uint[m_iNumVertices];
+    ZeroMemory(pPixels, sizeof(_uint) * m_iNumVertices);
+
+    ReadFile(hFile, pPixels, sizeof(_uint) * m_iNumVertices, &dwByte, nullptr);
+
+    CloseHandle(hFile);
+
+    // (2) 버퍼 속성 설정
+    m_iNumVertexBuffers                     = 1;
+    m_iVertexStride                         = sizeof(VTXNORTEX);
+
+    // 인덱스 수 = (X-1) * (Z-1) * 2삼각형 * 3정점
+    m_iNumIndices                           = (m_iNumVerticesX - 1) * (m_iNumVerticesZ - 1) * 2 * 3;        
+    m_iIndexStride                          = 4;
+    m_eIndexFormat                          = DXGI_FORMAT_R32_UINT;
+
+    m_ePrimitiveType                        = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+    // (3) 정점 버퍼 생성
+    D3D11_BUFFER_DESC       VertexBufferDesc{};
     VertexBufferDesc.ByteWidth              = m_iVertexStride * m_iNumVertices;
     VertexBufferDesc.Usage                  = D3D11_USAGE_DEFAULT;
     VertexBufferDesc.BindFlags              = D3D11_BIND_VERTEX_BUFFER;
@@ -31,30 +55,31 @@ HRESULT CVIBuffer_Terrain::Initialize_Prototype(const _tchar* pHeightMapFilePath
     VertexBufferDesc.MiscFlags              = 0;
     VertexBufferDesc.StructureByteStride    = m_iVertexStride;
 
-    VTXTEX* pVertices                       = new VTXTEX[m_iNumVertices];
-    ZeroMemory(pVertices, sizeof(VTXTEX) * m_iNumVertices);
+    VTXNORTEX*                 pVertices       = new VTXNORTEX[m_iNumVertices];
+    ZeroMemory(pVertices, sizeof(VTXNORTEX) * m_iNumVertices);
 
-    pVertices[0].vPosition                  = _float3(-0.5f, 0.5f, 0.f);
-    pVertices[0].vTexcoord                  = _float2(0.f, 0.f);
+    for (size_t i = 0; i < m_iNumVerticesZ; i++)
+    {
+        for (size_t j = 0; j < m_iNumVerticesX; j++)
+        {
+            size_t iIndex = i * m_iNumVerticesX + j;
 
-    pVertices[1].vPosition                  = _float3(0.5f, 0.5f, 0.f);
-    pVertices[1].vTexcoord                  = _float2(1.f, 0.f);
-
-    pVertices[2].vPosition                  = _float3(0.5f, -0.5f, 0.f);
-    pVertices[2].vTexcoord                  = _float2(1.f, 1.f);
-    
-    pVertices[3].vPosition                  = _float3(-0.5f, -0.5f, 0.f);
-    pVertices[3].vTexcoord                  = _float2(0.f, 1.f);
+            pVertices[iIndex].vPosition     = _float3(j, (pPixels[iIndex] & 0x000000ff) / 10.f, i);
+            pVertices[iIndex].vNormal       = _float3(0.f, 0.f, 0.f);
+            pVertices[iIndex].vTexcoord = _float2(j / (m_iNumVerticesX - 1.f), i / (m_iNumVerticesZ - 1.f));
+        }
+    }
 
     D3D11_SUBRESOURCE_DATA          VertexInitialData{};
     VertexInitialData.pSysMem               = pVertices;
 
-    FAILED_CHECK(m_pDevice->CreateBuffer(&VertexBufferDesc, &VertexInitialData, &m_pVB));
+    if (FAILED(m_pDevice->CreateBuffer(&VertexBufferDesc, &VertexInitialData, &m_pVB)))
+        return E_FAIL;
 
     Safe_Delete_Array(pVertices);
 
 
-    // (2) 인덱스 버퍼 생성
+    // (4) 인덱스 버퍼 생성
     D3D11_BUFFER_DESC               IndexBufferDesc{};
     IndexBufferDesc.ByteWidth               = m_iIndexStride * m_iNumIndices;
     IndexBufferDesc.Usage                   = D3D11_USAGE_DEFAULT;
@@ -63,25 +88,47 @@ HRESULT CVIBuffer_Terrain::Initialize_Prototype(const _tchar* pHeightMapFilePath
     IndexBufferDesc.MiscFlags               = 0;
     IndexBufferDesc.StructureByteStride     = m_iIndexStride;
 
-    _ushort* pIndices = new _ushort[m_iNumIndices];
-    ZeroMemory(pIndices, sizeof(_ushort) * m_iNumIndices);
+    _uint* pIndices                         = new _uint[m_iNumIndices];
+    ZeroMemory(pIndices, sizeof(_uint) * m_iNumIndices);
 
-    // 첫번째 삼각형 (우상단 - 대각선 기준)
-    pIndices[0] = 0;
-    pIndices[1] = 1;
-    pIndices[2] = 2;
+    _uint iNumIndices                       = {};
 
-    // 두 번째 삼각형 (좌하단 - 대각선 기준)
-    pIndices[3] = 0;
-    pIndices[4] = 2;
-    pIndices[5] = 3;
+    for (size_t i = 0; i < m_iNumVerticesZ -1 ; i++)
+    {
+        for (size_t j = 0; j < m_iNumVerticesX - 1; j++)
+        {
+            size_t iIndex = i * m_iNumVerticesX + j;
+
+            // 현재 셀의 4개 정점 인덱스 
+            // 좌상 -> 우상 -> 우하 -> 좌하
+            _uint iIndices[4] = {
+                iIndex + m_iNumVerticesX,
+                iIndex + m_iNumVerticesX + 1,
+                iIndex + 1,
+                iIndex
+            };
+
+            // 첫번째 삼각형 (우상단 - 대각선 기준)
+            pIndices[iNumIndices++] = iIndices[0];
+            pIndices[iNumIndices++] = iIndices[1];
+            pIndices[iNumIndices++] = iIndices[2];
+
+            // 두 번째 삼각형 (좌하단 - 대각선 기준)
+            pIndices[iNumIndices++] = iIndices[0];
+            pIndices[iNumIndices++] = iIndices[2];
+            pIndices[iNumIndices++] = iIndices[3];            
+        }
+    }
 
     D3D11_SUBRESOURCE_DATA          IndexInitialData{};
     IndexInitialData.pSysMem                = pIndices;
 
-    FAILED_CHECK(m_pDevice->CreateBuffer(&IndexBufferDesc, &IndexInitialData, &m_pIB));
+    if (FAILED(m_pDevice->CreateBuffer(&IndexBufferDesc, &IndexInitialData, &m_pIB)))
+        return E_FAIL;
 
     Safe_Delete_Array(pIndices);
+
+    Safe_Delete_Array(pPixels);
 
     return S_OK;
 }

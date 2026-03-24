@@ -67,9 +67,11 @@ HRESULT CGameInstance::Begin_Draw()
 
 HRESULT CGameInstance::Draw()
 {
-	FAILED_CHECK_RETURN(m_pRenderer->Draw(), E_FAIL);
+	if (FAILED(m_pRenderer->Draw()))
+		return E_FAIL;
 
-	FAILED_CHECK_RETURN(m_pLevel_Manager->Render(), E_FAIL);
+	if (FAILED(m_pLevel_Manager->Render()))
+		return E_FAIL;
 
 	return S_OK;
 }

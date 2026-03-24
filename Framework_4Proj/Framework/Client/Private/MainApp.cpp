@@ -41,11 +41,14 @@ void CMainApp::Update(_float fTimeDelta)
 
 HRESULT CMainApp::Render()
 {
-	FAILED_CHECK(m_pGameInstance->Begin_Draw());
+	if (FAILED(m_pGameInstance->Begin_Draw()))
+		return E_FAIL;
 
-	FAILED_CHECK(m_pGameInstance->Draw());
+	if (FAILED(m_pGameInstance->Draw()))
+		return E_FAIL;
 
-	FAILED_CHECK(m_pGameInstance->End_Draw());
+	if (FAILED(m_pGameInstance->End_Draw()))
+		return E_FAIL;
 
 	return S_OK;
 }

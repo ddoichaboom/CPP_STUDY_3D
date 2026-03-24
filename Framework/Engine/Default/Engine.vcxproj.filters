@@ -85,6 +85,9 @@
     <Filter Include="07. Component\Transform\2D">
       <UniqueIdentifier>{8f9d54a4-47de-4002-8d23-3503c9155805}</UniqueIdentifier>
     </Filter>
+    <Filter Include="05. GameObject\Camera">
+      <UniqueIdentifier>{f179bec4-a66e-45ec-b9d9-9ad39f13288e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\Engine_Defines.h">
@@ -171,6 +174,9 @@
     <ClInclude Include="..\Public\Transform_3D.h">
       <Filter>07. Component\Transform\3D</Filter>
     </ClInclude>
+    <ClInclude Include="..\Public\Camera.h">
+      <Filter>05. GameObject\Camera</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Private\Base.cpp">
@@ -238,6 +244,9 @@
     </ClCompile>
     <ClCompile Include="..\Private\Transform_3D.cpp">
       <Filter>07. Component\Transform\3D</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Camera.cpp">
+      <Filter>05. GameObject\Camera</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -18,9 +18,11 @@ HRESULT CTerrain::Initialize_Prototype()
 
 HRESULT CTerrain::Initialize(void* pArg)
 {
-    FAILED_CHECK(__super::Initialize(pArg));
+    if (FAILED(__super::Initialize(pArg)))
+        return E_FAIL;
 
-    FAILED_CHECK(Ready_Components());
+    if (FAILED(Ready_Components()))
+        return E_FAIL;
 
     return S_OK;
 }
@@ -40,13 +42,17 @@ void CTerrain::Late_Update(_float fTimeDelta)
 
 HRESULT CTerrain::Render()
 {
-    FAILED_CHECK(Bind_ShaderResources());
+    if (FAILED(Bind_ShaderResources()))
+        return E_FAIL;
 
-    FAILED_CHECK(m_pShaderCom->Begin(0));
+    if (FAILED(m_pShaderCom->Begin(0)))
+        return E_FAIL;
 
-    FAILED_CHECK(m_pVIBufferCom->Bind_Resources());
+    if (FAILED(m_pVIBufferCom->Bind_Resources()))
+        return E_FAIL;
 
-    FAILED_CHECK(m_pVIBufferCom->Render());
+    if (FAILED(m_pVIBufferCom->Render()))
+        return E_FAIL;
 
     return S_OK;
 }
@@ -54,25 +60,45 @@ HRESULT CTerrain::Render()
 HRESULT CTerrain::Ready_Components()
 {
     // Com_Shader
-    FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_Shader_VtxTex"),
-        TEXT("Com_Shader"), reinterpret_cast<CComponent**>(&m_pShaderCom)));
+    if (FAILED(__super::Add_Component(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Shader_VtxNorTex"),
+        TEXT("Com_Shader"), reinterpret_cast<CComponent**>(&m_pShaderCom))))
+        return E_FAIL;
 
     // Com_VIBuffer
-    FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_VIBuffer_Terrain"),
-        TEXT("Com_VIBuffer"), reinterpret_cast<CComponent**>(&m_pVIBufferCom)));
+    if (FAILED(__super::Add_Component(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_VIBuffer_Terrain"),
+        TEXT("Com_VIBuffer"), reinterpret_cast<CComponent**>(&m_pVIBufferCom))))
+        return E_FAIL;
 
     // Com_Texture
-    FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Texture_Terrain"),
-        TEXT("Com_Texture"), reinterpret_cast<CComponent**>(&m_pTextureCom)));
+    if (FAILED(__super::Add_Component(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Texture_Terrain"),
+        TEXT("Com_Texture"), reinterpret_cast<CComponent**>(&m_pTextureCom))))
+        return E_FAIL;
 
     return S_OK;
 }
 
 HRESULT CTerrain::Bind_ShaderResources()
 {
-    FAILED_CHECK(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix"));
+    if (FAILED(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix")))
+        return E_FAIL;
 
-    FAILED_CHECK(m_pTextureCom->Bind_ShaderResource(m_pShaderCom, "g_Texture", 0));
+    // 임시 View / Proj 행렬 생성
+    _float4x4 ViewMatrix, ProjMatrix;
+
+    XMStoreFloat4x4(&ViewMatrix,
+                    XMMatrixLookAtLH(XMVectorSet(0.f, 20.f, -15.f, 1.f), XMVectorSet(0.f, 0.f, 0.f, 1.f), XMVectorSet(0.f, 1.f, 0.f, 0.f)));
+
+    XMStoreFloat4x4(&ProjMatrix,
+        XMMatrixPerspectiveFovLH(XMConvertToRadians(60.f), static_cast<_float>(g_iWinSizeX) / g_iWinSizeY, 0.1f, 1000.f));
+
+    if (FAILED(m_pShaderCom->Bind_Matrix("g_ViewMatrix", &ViewMatrix)))
+        return E_FAIL;
+
+    if (FAILED(m_pShaderCom->Bind_Matrix("g_ProjMatrix", &ProjMatrix)))
+        return E_FAIL;
+
+    if (FAILED(m_pTextureCom->Bind_ShaderResource(m_pShaderCom, "g_Texture", 0)))
+        return E_FAIL;
 
     return S_OK;
 }

@@ -27,13 +27,19 @@ void CRenderer::Add_RenderGroup(RENDERID eGroupID, CGameObject* pGameObject)
 
 HRESULT CRenderer::Draw()
 {
-	FAILED_CHECK_RETURN(Render_Priority(), E_FAIL);
+	if (FAILED(Render_Priority()))
+		return E_FAIL;
 
-	FAILED_CHECK_RETURN(Render_NonBlend(), E_FAIL);
+	if (FAILED(Render_NonBlend()))
+		return E_FAIL;
 
-	FAILED_CHECK_RETURN(Render_Blend(), E_FAIL);
+	if (FAILED(Render_Blend()))
+		return E_FAIL;
 
-	FAILED_CHECK_RETURN(Render_UI(), E_FAIL);
+	if (FAILED(Render_UI()))
+		return E_FAIL;
+
+
 
 	return S_OK;
 

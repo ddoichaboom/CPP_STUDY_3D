@@ -32,6 +32,7 @@ CBase (ref counting)
 │       └── CVIBuffer_Terrain (final) — terrain mesh from heightmap
 ├── CLevel (abstract) — base for game levels (Logo, Loading, GamePlay)
 ├── CGameObject (abstract) — base for game entities, auto-creates CTransform (3D/2D by TRANSFORMTYPE), supports Clone pattern, GAMEOBJECT_DESC
+│   └── CCamera (abstract) — camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), sets Transform position+LookAt, references CPipeLine (미구현)
 ├── CUIObject (abstract) — base for UI entities, inherits CGameObject, screen-space positioning via Update_UIState, orthographic View/Proj matrices
 ├── CLayer — groups GameObjects at the same depth, delegates update/render
 ├── CLevel_Manager (singleton) — manages current level and transitions
@@ -46,9 +47,9 @@ CBase (ref counting)
 - **Singletons** via `DECLARE_SINGLETON` / `IMPLEMENT_SINGLETON` macros
 - **Prototype/Clone** for GameObjects (register prototypes, clone instances)
 - **Component system**: CComponent abstract base → CTransform (abstract base) → CTransform_3D/CTransform_2D, CShader, CTexture, CVIBuffer. CGameObject auto-creates CTransform_3D or CTransform_2D based on GAMEOBJECT_DESC::eTransformType in Initialize(). CVIBuffer/CShader/CTexture uses Prototype/Clone with shared GPU resources
-- **Descriptor chain**: TRANSFORM_DESC → GAMEOBJECT_DESC (+ iFlag, eTransformType) → UIOBJECT_DESC (+ fCenterX/Y, fSizeX/Y, auto TRANSFORM_2D) → BACKGROUND_DESC. Passed through Initialize(void* pArg)
+- **Descriptor chain**: TRANSFORM_DESC → GAMEOBJECT_DESC (+ iFlag, eTransformType=TRANSFORM_3D 기본값) → CAMERA_DESC (+ vEye/vAt/fFovy/fNear/fFar) / UIOBJECT_DESC (+ fCenterX/Y, fSizeX/Y, auto TRANSFORM_2D) → BACKGROUND_DESC / TERRAIN_DESC (Client측 확장). Passed through Initialize(void* pArg)
 - **Threaded loading** via CLoader for level transitions
-- **HRESULT error handling** with `FAILED_CHECK` / `NULL_CHECK` macros
+- **HRESULT error handling** with `if (FAILED(...)) return E_FAIL;` pattern and `NULL_CHECK` macro
 - **Layered object management**: Level → Layer → GameObject hierarchy via CObject_Manager
 - **3-stage update pipeline**: Priority_Update → Update → Late_Update (CObject_Manager orchestrates)
 - **Render group system**: GameObjects register themselves to CRenderer in Late_Update, CRenderer draws in order (Priority → NonBlend → Blend → UI)
@@ -77,7 +78,7 @@ Framework/
 │   │   ├── Engine_Enum.h           — Enums: WINMODE, PROTOTYPE, TRANSFORMTYPE, RENDERID, STATE, D3DTS
 │   │   ├── Engine_Function.h       — Template utilities: Safe_Delete, Safe_Release, Safe_AddRef
 │   │   ├── Engine_Macro.h          — Macros: ETOI/ETOUI, NULL_CHECK, FAILED_CHECK, SINGLETON, DLL export, PURE (= 0)
-│   │   ├── Engine_Struct.h         — ENGINE_DESC, VTXTEX (Position XMFLOAT3 + Texcoord XMFLOAT2)
+│   │   ├── Engine_Struct.h         — ENGINE_DESC, VTXTEX (Position + Texcoord + embedded Elements[]), VTXNORTEX (Position + Normal + Texcoord + embedded Elements[])
 │   │   ├── Engine_Typedef.h        — Type aliases: _float, _int, _uint, _float2/3/4, _float4x4, _vector/_fvector, _matrix/_fmatrix
 │   │   ├── Base.h                  — Abstract base class: reference counting (AddRef/Release)
 │   │   ├── GameInstance.h          — Singleton: engine initialization, subsystem delegation (incl. Renderer)
@@ -98,8 +99,9 @@ Framework/
 │   │   ├── Transform_2D.h          — 2D transform: Move_X, Move_Y (screen-space movement)
 │   │   ├── VIBuffer.h              — Abstract vertex/index buffer component: VB/IB management, IA binding, DrawIndexed
 │   │   ├── VIBuffer_Rect.h         — Rectangle mesh: 4 VTXTEX vertices, 6 indices, TRIANGLELIST topology
-│   │   ├── VIBuffer_Terrain.h      — Terrain mesh from heightmap bitmap
+│   │   ├── VIBuffer_Terrain.h      — Terrain mesh from heightmap BMP: VTXNORTEX vertices, 32-bit indices, Create(pHeightMapFilePath)
 │   │   ├── Shader.h                — CShader component: FX11 Effect wrapper, HLSL compilation, per-pass InputLayout, Begin(passIndex), Bind_Matrix/Bind_SRV
+│   │   ├── Camera.h                — Abstract camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), CPipeLine ref, Clone = PURE
 │   │   ├── Texture.h               — CTexture component: multi-texture SRV array, DDS/WIC loading, Bind_ShaderResource
 │   │   ├── fx11/                   — DirectX Effects 11 headers
 │   │   │   ├── d3dx11effect.h      — ID3DX11Effect interface definitions (FX11 library)
@@ -124,10 +126,11 @@ Framework/
 │   │   ├── Transform.cpp           — Transform base: init (Identity matrix), Bind_ShaderResource, Set_Scale/Scaling
 │   │   ├── Transform_3D.cpp        — 3D movement/rotation implementation, Create/Clone lifecycle
 │   │   ├── Transform_2D.cpp        — 2D movement implementation, Create/Clone lifecycle
+│   │   ├── Camera.cpp              — Camera base: Initialize extracts projection params, sets Transform position + LookAt via CTransform_3D cast
 │   │   ├── UIObject.cpp            — UI base: Initialize (screen→world via Update_UIState, ortho View/Proj), Bind_ShaderResource(D3DTS)
 │   │   ├── VIBuffer.cpp            — VIBuffer base: copy ctor shares VB/IB with AddRef, Bind_Resources sets IA stage, Free releases buffers
 │   │   ├── VIBuffer_Rect.cpp       — Rect mesh prototype: creates VB(4 VTXTEX) and IB(6 _ushort) via CreateBuffer
-│   │   ├── VIBuffer_Terrain.cpp    — Terrain mesh: heightmap loading, vertex/index buffer creation
+│   │   ├── VIBuffer_Terrain.cpp    — Terrain mesh: BMP heightmap → VTXNORTEX vertices (height from blue channel /10.f), 32-bit index grid generation
 │   │   ├── Shader.cpp              — CShader: D3DX11CompileEffectFromFile, per-pass InputLayout creation, Begin, Bind_Matrix/Bind_SRV, shared Effect/InputLayouts in clone
 │   │   └── Texture.cpp             — CTexture: multi-texture loading (DDS/WIC by extension), SRV array, Bind_ShaderResource, shared SRVs in clone
 │   ├── ThirdPartyLib/              — Third-party static libraries
@@ -150,18 +153,19 @@ Framework/
 │   │   ├── BackGround.h            — Background UI object (inherits CUIObject): BACKGROUND_DESC, CShader/CTexture/CVIBuffer_Rect, UI render group
 │   │   └── Terrain.h               — Terrain game object: TERRAIN_DESC, CShader/CTexture/CVIBuffer_Terrain, NONBLEND render group
 │   ├── Private/                    — Client implementation files
-│   │   ├── MainApp.cpp             — Engine initialization with ENGINE_DESC, starts logo level
+│   │   ├── MainApp.cpp             — Engine initialization with ENGINE_DESC, Ready_Prototype_For_Static (VIBuffer_Rect + Shader_VtxTex via VTXTEX::Elements), starts logo level
 │   │   ├── Level_Logo.cpp          — Logo display, Ready_Layer_BackGround adds BackGround via Add_GameObject
 │   │   ├── Level_Loading.cpp       — Spawns loader thread, transitions on completion
 │   │   ├── Level_GamePlay.cpp      — Gameplay level: Ready_Layer_Terrain creates Terrain via Add_GameObject
-│   │   ├── Loader.cpp              — Worker thread loading (CoInitializeEx for WIC), registers texture + BackGround/Terrain prototypes
+│   │   ├── Loader.cpp              — Worker thread loading (CoInitializeEx for WIC), registers Logo(Texture_BackGround + BackGround) and GamePlay(Texture_Terrain + Shader_VtxNorTex + VIBuffer_Terrain + Terrain) prototypes
 │   │   ├── BackGround.cpp          — Background UI object: Ready_Components, Bind_ShaderResources (World + UI View/Proj + texture), UI render group, Move_X via CTransform_2D
-│   │   └── Terrain.cpp             — Terrain object: Ready_Components (Shader/VIBuffer_Terrain/Texture), Bind_ShaderResources, NONBLEND render group
+│   │   └── Terrain.cpp             — Terrain object: Ready_Components (Shader_VtxNorTex/VIBuffer_Terrain/Texture_Terrain), temporary hardcoded View/Proj matrices, NONBLEND render group
 │   ├── Bin/                        — Build output: Client.exe, Client.pdb (+ copied Engine.dll)
 │   │   ├── ShaderFiles/
-│   │   │   └── Shader_VtxTex.hlsl  — HLSL Effect file: VS_MAIN (WVP transform), PS_MAIN (texture sampling + alpha test), sampler, technique11
+│   │   │   ├── Shader_VtxTex.hlsl  — HLSL Effect file (VTXTEX): VS_MAIN (WVP transform), PS_MAIN (texture sampling + alpha test + grayscale), technique11
+│   │   │   └── Shader_VtxNorTex.hlsl — HLSL Effect file (VTXNORTEX): VS_IN with NORMAL semantic, WVP transform, texture sampling + alpha test, technique11
 │   │   └── Resources/
-│   │       └── Textures/            — Texture image files (Default0.jpg, Default1.JPG, etc.)
+│   │       └── Textures/            — Texture image files (Default0.jpg, Default1.JPG, Terrain/Height.bmp, Terrain/Tile0.jpg, etc.)
 │
 ├── EngineSDK/                      — SDK distribution folder
 │   ├── Inc/                        — Copied Engine headers (via UpdateLib.bat)
@@ -230,7 +234,7 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
   - `Bind_ShaderResource(pShader, pConstantName)`: 자신의 WorldMatrix를 CShader::Bind_Matrix로 전달
   - Initialize_Prototype()에서 `XMMatrixIdentity()`로 WorldMatrix 항등행렬 초기화. 복사 생성자에서 WorldMatrix 복사
 - `CGameObject::Initialize(void* pArg)` 에서 `GAMEOBJECT_DESC::eTransformType`에 따라 `CTransform_3D::Create()` 또는 `CTransform_2D::Create()`로 트랜스폼 자동 생성. pArg가 nullptr이면 기본값 TRANSFORM_3D
-- Descriptor 상속 체인: `TRANSFORM_DESC` → `GAMEOBJECT_DESC` (+ iFlag, eTransformType) → `UIOBJECT_DESC` (+ fCenterX/Y, fSizeX/Y, 생성자에서 eTransformType=TRANSFORM_2D) → `BACKGROUND_DESC` (Client측 확장)
+- Descriptor 상속 체인: `TRANSFORM_DESC` → `GAMEOBJECT_DESC` (+ iFlag, eTransformType=TRANSFORM_3D 기본값) → `CAMERA_DESC` (+ vEye/vAt/fFovy/fNear/fFar) / `UIOBJECT_DESC` (+ fCenterX/Y, fSizeX/Y, 생성자에서 eTransformType=TRANSFORM_2D) → `BACKGROUND_DESC` / `TERRAIN_DESC` (Client측 확장)
 - `CTransform::Initialize(pArg)`: pArg가 nullptr이면 기본값으로 조기 리턴, 아니면 TRANSFORM_DESC로 캐스팅하여 속도/회전 설정
 
 ### UIObject System (CUIObject)
@@ -242,11 +246,26 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - `m_TransformMatrices[D3DTS::END]`: UI용 View(항등행렬) + Proj(직교투영) 저장
 - UI 객체는 RENDERID::UI 그룹에 등록하여 마지막에 렌더링
 
+### Camera System (CCamera)
+- `CCamera` (abstract): CGameObject 상속. 카메라 전용 중간 클래스
+- `CAMERA_DESC`: GAMEOBJECT_DESC 상속. vEye(카메라 위치), vAt(바라볼 지점), fFovy(수직 시야각), fNear/fFar(클리핑 평면). eTransformType은 GAMEOBJECT_DESC 기본값(TRANSFORM_3D) 그대로 사용
+- `Initialize(pArg)`: DESC에서 fFovy/fNear/fFar 추출 → `__super::Initialize(pArg)`로 CTransform_3D 생성 → `Set_State(POSITION, vEye)` + `LookAt(vAt)` (CTransform_3D로 다운캐스팅 필요)
+- `Clone() = PURE`: abstract 클래스이므로 Client에서 구체 카메라(FreeCamera 등)가 구현
+- `m_pPipeLine`: CPipeLine 참조 (향후 구현 예정, 현재 nullptr)
+- 멤버 변수 `protected` 접근 제어: 파생 클래스에서 fFovy/fNear/fFar/pPipeLine 접근 필요
+
+### Vertex Format & InputLayout Embedding
+- 정점 구조체에 `static constexpr D3D11_INPUT_ELEMENT_DESC Elements[]`와 `static const unsigned int iNumElements`를 내장
+- `VTXTEX`: Position(XMFLOAT3) + Texcoord(XMFLOAT2), 2 Elements, 20 bytes
+- `VTXNORTEX`: Position(XMFLOAT3) + Normal(XMFLOAT3) + Texcoord(XMFLOAT2), 3 Elements, 32 bytes
+- 셰이더 생성 시 `CShader::Create(..., VTXNORTEX::Elements, VTXNORTEX::iNumElements)` 형태로 사용 — 정점 포맷과 InputLayout의 결합도를 높여 불일치 방지
+- **중요:** Terrain은 VTXNORTEX 정점 포맷 → 반드시 `Shader_VtxNorTex` 셰이더와 매칭. VtxTex 셰이더 사용 시 InputLayout 불일치로 크래시
+
 ### VIBuffer System (Vertex/Index Buffer)
 - `CVIBuffer` (abstract): CComponent 상속. ID3D11Buffer* m_pVB/m_pIB 소유. Bind_Resources()로 IA 스테이지 세팅, Render()로 DrawIndexed() 호출
 - 복사 생성자에서 VB/IB를 공유(포인터 복사 + Safe_AddRef). 같은 메시를 쓰는 클론끼리 GPU 버퍼를 중복 생성하지 않음
 - `CVIBuffer_Rect` (final): VTXTEX 정점 4개(좌상/우상/우하/좌하), _ushort 인덱스 6개(삼각형 2개). D3D11_USAGE_DEFAULT, TRIANGLELIST 토폴로지
-- `CVIBuffer_Terrain` (final): 하이트맵 비트맵으로부터 지형 메시 생성
+- `CVIBuffer_Terrain` (final): BMP 하이트맵으로부터 지형 메시 생성. VTXNORTEX 정점(높이: blue 채널 / 10.f, UV: j/(X-1), i/(Z-1)), _uint 32비트 인덱스, (X-1)*(Z-1)*2 삼각형. Create()에 pHeightMapFilePath 전달
 - 버퍼 생성 흐름: D3D11_BUFFER_DESC + D3D11_SUBRESOURCE_DATA → m_pDevice->CreateBuffer() → Safe_Delete_Array(CPU 임시 데이터)
 - Free() 순서: __super::Free() (CComponent → Device/Context 해제) → Safe_Release(m_pVB) → Safe_Release(m_pIB)
 
@@ -259,8 +278,9 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - Bind_SRV(pConstantName, pSRV): Effect의 **GetVariableByName**(GetConstantBufferByName이 아님!) → AsShaderResource → SetResource. HLSL의 texture2D 변수에 SRV 바인딩
 - 복사 생성자에서 m_pEffect + m_vInputLayouts 모두 공유(포인터 복사 + Safe_AddRef). CVIBuffer와 동일한 리소스 공유 패턴
 - Free() 순서: __super::Free() → InputLayouts 순회 Safe_Release + clear → Safe_Release(m_pEffect)
-- HLSL 파일 위치: `Client/Bin/ShaderFiles/Shader_VtxTex.hlsl`
-- HLSL 구조: 전역 행렬(g_WorldMatrix, g_ViewMatrix, g_ProjMatrix) + texture2D g_Texture + sampler DefaultSampler, VS_IN/VS_OUT (VTXTEX와 1:1 대응), VS_MAIN (WVP 변환), PS_IN/PS_OUT, PS_MAIN (g_Texture.Sample() + alpha test discard), technique11 DefaultTechnique / pass DefaultPass
+- HLSL 파일 위치: `Client/Bin/ShaderFiles/Shader_VtxTex.hlsl` (VTXTEX용), `Shader_VtxNorTex.hlsl` (VTXNORTEX용)
+- HLSL 공통 구조: 전역 행렬(g_WorldMatrix, g_ViewMatrix, g_ProjMatrix) + texture2D g_Texture + sampler DefaultSampler, VS_IN/VS_OUT (정점 구조체와 1:1 대응), VS_MAIN (WVP 변환), PS_MAIN (g_Texture.Sample() + alpha test discard), technique11 DefaultTechnique / pass DefaultPass
+- Shader_VtxNorTex: VS_IN에 `float3 vNormal : NORMAL` 추가 (현재 셰이더 로직에서 미사용, 향후 라이팅용)
 - vcxproj에서 hlsl 파일의 ShaderType은 반드시 `Effect (/fx)`로 설정 (Vertex로 설정 시 FXC가 `main` 진입점을 찾아 빌드 실패)
 
 ### Texture System (CTexture)

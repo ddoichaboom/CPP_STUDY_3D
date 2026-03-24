@@ -28,10 +28,11 @@ HRESULT CBackGround::Initialize(void* pArg)
 	Desc.fSizeX = g_iWinSizeX;
 	Desc.fSizeY = g_iWinSizeY;
 
-	FAILED_CHECK(__super::Initialize(&Desc));
+	if (FAILED(__super::Initialize(&Desc)))
+		return E_FAIL;
 
-	FAILED_CHECK(Ready_Components());
-
+	if (FAILED(Ready_Components()))
+		return E_FAIL;
 
 	return S_OK;
 }
@@ -54,13 +55,17 @@ void CBackGround::Late_Update(_float fTimeDelta)
 
 HRESULT CBackGround::Render()
 {
-	FAILED_CHECK(Bind_ShaderResources());
+	if (FAILED(Bind_ShaderResources()))
+		return E_FAIL;
 
-	FAILED_CHECK(m_pShaderCom->Begin(0));
+	if (FAILED(m_pShaderCom->Begin(0)))
+		return E_FAIL;
 
-	FAILED_CHECK(m_pVIBufferCom->Bind_Resources());
+	if (FAILED(m_pVIBufferCom->Bind_Resources()))
+		return E_FAIL;
 
-	FAILED_CHECK(m_pVIBufferCom->Render());
+	if (FAILED(m_pVIBufferCom->Render()))
+		return E_FAIL;
 
 	return S_OK;
 }
@@ -68,16 +73,19 @@ HRESULT CBackGround::Render()
 HRESULT CBackGround::Ready_Components()
 {
 	// Com_Shader
-	FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_Shader_VtxTex"),
-		TEXT("Com_Shader"), reinterpret_cast<CComponent**>(&m_pShaderCom)));
+	if (FAILED(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_Shader_VtxTex"),
+		TEXT("Com_Shader"), reinterpret_cast<CComponent**>(&m_pShaderCom))))
+		return E_FAIL;
 
 	// Com_VIBuffer
-	FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_VIBuffer_Rect"),
-		TEXT("Com_VIBuffer"), reinterpret_cast<CComponent**>(&m_pVIBufferCom)));
+	if (FAILED(__super::Add_Component(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_VIBuffer_Rect"),
+		TEXT("Com_VIBuffer"), reinterpret_cast<CComponent**>(&m_pVIBufferCom))))
+		return E_FAIL;
 
 	// Com_Texture
-	FAILED_CHECK(__super::Add_Component(ETOUI(LEVEL::LOGO), TEXT("Prototype_Component_Texture_BackGround"),
-		TEXT("Com_Texture"), reinterpret_cast<CComponent**>(&m_pTextureCom)));
+	if (FAILED(__super::Add_Component(ETOUI(LEVEL::LOGO), TEXT("Prototype_Component_Texture_BackGround"),
+		TEXT("Com_Texture"), reinterpret_cast<CComponent**>(&m_pTextureCom))))
+		return E_FAIL;
 
 	return S_OK;
 }
@@ -85,16 +93,21 @@ HRESULT CBackGround::Ready_Components()
 HRESULT CBackGround::Bind_ShaderResources()
 {
 	// (1) World 행렬 바인딩
-	FAILED_CHECK(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix"));
+	if (FAILED(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix")))
+		return E_FAIL;
+
 
 	// (2) View 행렬 바인딩
-	FAILED_CHECK(__super::Bind_ShaderResource(m_pShaderCom, "g_ViewMatrix", D3DTS::VIEW));
+	if (FAILED(__super::Bind_ShaderResource(m_pShaderCom, "g_ViewMatrix", D3DTS::VIEW)))
+		return E_FAIL;
 
 	// (3) Projection 행렬 바인딩
-	FAILED_CHECK(__super::Bind_ShaderResource(m_pShaderCom, "g_ProjMatrix", D3DTS::PROJ));
+	if (FAILED(__super::Bind_ShaderResource(m_pShaderCom, "g_ProjMatrix", D3DTS::PROJ)))
+		return E_FAIL;
 
 	// (4) Texture 바인딩
-	FAILED_CHECK(m_pTextureCom->Bind_ShaderResource(m_pShaderCom, "g_Texture", 0));
+	if (FAILED(m_pTextureCom->Bind_ShaderResource(m_pShaderCom, "g_Texture", 0)))
+		return E_FAIL;
 
 	return S_OK;
 }

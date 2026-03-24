@@ -41,11 +41,14 @@ void CMainApp::Update(_float fTimeDelta)
 
 HRESULT CMainApp::Render()
 {
-	FAILED_CHECK(m_pGameInstance->Begin_Draw());
+	if (FAILED(m_pGameInstance->Begin_Draw()))
+		return E_FAIL;
 
-	FAILED_CHECK(m_pGameInstance->Draw());
+	if (FAILED(m_pGameInstance->Draw()))
+		return E_FAIL;
 
-	FAILED_CHECK(m_pGameInstance->End_Draw());
+	if (FAILED(m_pGameInstance->End_Draw()))
+		return E_FAIL;
 
 	return S_OK;
 }
@@ -54,23 +57,13 @@ HRESULT CMainApp::Ready_Prototype_For_Static()
 {
 	// (1) VIBuffer_Rect 프로토타입 등록 (STATIC 레벨)
 	if (FAILED(m_pGameInstance->Add_Prototype(
-		ETOUI(LEVEL::STATIC),
-		TEXT("Prototype_Component_VIBuffer_Rect"),
-		CVIBuffer_Rect::Create(m_pDevice, m_pContext))))
+					ETOUI(LEVEL::STATIC),
+					TEXT("Prototype_Component_VIBuffer_Rect"),
+					CVIBuffer_Rect::Create(m_pDevice, m_pContext))))
 		return E_FAIL;
 
-	// (2) Shader 프로토타입 등록 (STATIC 레벨)
-	D3D11_INPUT_ELEMENT_DESC Elements[] = {
-		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
-	};
-
-	if (FAILED(m_pGameInstance->Add_Prototype(
-		ETOUI(LEVEL::STATIC),
-		TEXT("Prototype_Component_Shader_VtxTex"),
-		CShader::Create(m_pDevice, m_pContext,
-			TEXT("../Bin/ShaderFiles/Shader_VtxTex.hlsl"),
-			Elements, 2))))
+	if (FAILED(m_pGameInstance->Add_Prototype(ETOUI(LEVEL::STATIC), TEXT("Prototype_Component_Shader_VtxTex"),
+				CShader::Create(m_pDevice, m_pContext, TEXT("../Bin/ShaderFiles/Shader_VtxTex.hlsl"), VTXTEX::Elements, VTXTEX::iNumElements))))
 		return E_FAIL;
 
 	return S_OK;
