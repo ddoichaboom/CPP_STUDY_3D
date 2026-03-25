@@ -19,8 +19,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 CBase (ref counting)
-├── CGameInstance (singleton) — central coordinator for graphics, timers, levels, objects, renderer
+├── CGameInstance (singleton) — central coordinator for graphics, timers, levels, objects, renderer, input, pipeline
 ├── CGraphic_Device — D3D11 device, context, swap chain initialization
+├── CInput_Device (final) — Raw Input 기반 키보드/마우스 입력 처리, WndProc 이벤트 → 프레임 데이터 2단계 구조
+├── CPipeLine (final) — View/Proj 행렬 저장소, 역행렬 자동 계산, 카메라 월드 위치 추출
 ├── CComponent (abstract) — base for components, holds Device/Context, supports prototype/clone
 │   └── CTransform (abstract) — world matrix, state accessors, scale, Bind_ShaderResource (base for 3D/2D)
 │       └── CTransform_3D (final) — 3D movement: Go_Straight/Backward/Left/Right, Rotation/Turn, LookAt
@@ -32,7 +34,7 @@ CBase (ref counting)
 │       └── CVIBuffer_Terrain (final) — terrain mesh from heightmap
 ├── CLevel (abstract) — base for game levels (Logo, Loading, GamePlay)
 ├── CGameObject (abstract) — base for game entities, auto-creates CTransform (3D/2D by TRANSFORMTYPE), supports Clone pattern, GAMEOBJECT_DESC
-│   └── CCamera (abstract) — camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), sets Transform position+LookAt, references CPipeLine (미구현)
+│   └── CCamera (abstract) — camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), sets Transform position+LookAt, references CPipeLine
 ├── CUIObject (abstract) — base for UI entities, inherits CGameObject, screen-space positioning via Update_UIState, orthographic View/Proj matrices
 ├── CLayer — groups GameObjects at the same depth, delegates update/render
 ├── CLevel_Manager (singleton) — manages current level and transitions
@@ -74,8 +76,8 @@ CBase (ref counting)
 Framework/
 ├── Engine/                         — Core engine DLL project
 │   ├── Public/                     — Engine header files
-│   │   ├── Engine_Defines.h        — Master header: D3D11, DirectXMath, DirectXCollision, d3dcompiler, FX11(d3dx11effect.h), DirectXTK(DDSTextureLoader/WICTextureLoader), DirectInput8, STL includes, debug memory tracking
-│   │   ├── Engine_Enum.h           — Enums: WINMODE, PROTOTYPE, TRANSFORMTYPE, RENDERID, STATE, D3DTS
+│   │   ├── Engine_Defines.h        — Master header: D3D11, DirectXMath, DirectXCollision, d3dcompiler, FX11(d3dx11effect.h), DirectXTK(DDSTextureLoader/WICTextureLoader), STL includes, debug memory tracking
+│   │   ├── Engine_Enum.h           — Enums: WINMODE, PROTOTYPE, TRANSFORMTYPE, RENDERID, STATE, D3DTS, MOUSEBTN, MOUSEAXIS
 │   │   ├── Engine_Function.h       — Template utilities: Safe_Delete, Safe_Release, Safe_AddRef
 │   │   ├── Engine_Macro.h          — Macros: ETOI/ETOUI, NULL_CHECK, FAILED_CHECK, SINGLETON, DLL export, PURE (= 0)
 │   │   ├── Engine_Struct.h         — ENGINE_DESC, VTXTEX (Position + Texcoord + embedded Elements[]), VTXNORTEX (Position + Normal + Texcoord + embedded Elements[])
@@ -102,6 +104,8 @@ Framework/
 │   │   ├── VIBuffer_Terrain.h      — Terrain mesh from heightmap BMP: VTXNORTEX vertices, 32-bit indices, Create(pHeightMapFilePath)
 │   │   ├── Shader.h                — CShader component: FX11 Effect wrapper, HLSL compilation, per-pass InputLayout, Begin(passIndex), Bind_Matrix/Bind_SRV
 │   │   ├── Camera.h                — Abstract camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), CPipeLine ref, Clone = PURE
+│   │   ├── Input_Device.h          — Raw Input 기반 입력 장치: 키보드(VK_*), 마우스(버튼/이동/휠), static 누적→프레임 복사 2단계 구조
+│   │   ├── PipeLine.h              — View/Proj 행렬 저장소: Get/Set_Transform, 역행렬 자동 계산, 카메라 월드 위치 추출
 │   │   ├── Texture.h               — CTexture component: multi-texture SRV array, DDS/WIC loading, Bind_ShaderResource
 │   │   ├── fx11/                   — DirectX Effects 11 headers
 │   │   │   ├── d3dx11effect.h      — ID3DX11Effect interface definitions (FX11 library)
@@ -127,6 +131,8 @@ Framework/
 │   │   ├── Transform_3D.cpp        — 3D movement/rotation implementation, Create/Clone lifecycle
 │   │   ├── Transform_2D.cpp        — 2D movement implementation, Create/Clone lifecycle
 │   │   ├── Camera.cpp              — Camera base: Initialize extracts projection params, sets Transform position + LookAt via CTransform_3D cast
+│   │   ├── Input_Device.cpp        — Raw Input 디바이스 등록, WM_INPUT 처리(Process_Input static), 프레임별 Update 복사
+│   │   ├── PipeLine.cpp            — 생성자에서 항등행렬 초기화, Update()에서 역행렬 계산 + View 역행렬에서 카메라 위치 추출
 │   │   ├── UIObject.cpp            — UI base: Initialize (screen→world via Update_UIState, ortho View/Proj), Bind_ShaderResource(D3DTS)
 │   │   ├── VIBuffer.cpp            — VIBuffer base: copy ctor shares VB/IB with AddRef, Bind_Resources sets IA stage, Free releases buffers
 │   │   ├── VIBuffer_Rect.cpp       — Rect mesh prototype: creates VB(4 VTXTEX) and IB(6 _ushort) via CreateBuffer
@@ -169,6 +175,8 @@ Framework/
 │
 ├── EngineSDK/                      — SDK distribution folder
 │   ├── Inc/                        — Copied Engine headers (via UpdateLib.bat)
+│   │   ├── Input_Device.h          — (copied from Engine/Public)
+│   │   ├── PipeLine.h              — (copied from Engine/Public)
 │   │   ├── Shader.h                — (copied from Engine/Public)
 │   │   ├── VIBuffer.h              — (copied from Engine/Public)
 │   │   ├── VIBuffer_Rect.h         — (copied from Engine/Public)
@@ -246,13 +254,39 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - `m_TransformMatrices[D3DTS::END]`: UI용 View(항등행렬) + Proj(직교투영) 저장
 - UI 객체는 RENDERID::UI 그룹에 등록하여 마지막에 렌더링
 
+### Input System (CInput_Device — Raw Input)
+- 수업 원본은 DirectInput8 사용 → **Raw Input**으로 교체 (DirectInput8은 MS 레거시, 현업/상용 엔진은 Raw Input + XInput 사용)
+- `CInput_Device` (final): CBase 상속. ENGINE_DLL 없음 (CGameInstance 통해서만 접근, 내부 클래스)
+- **2단계 데이터 흐름**: WndProc의 WM_INPUT → static 누적 버퍼 → Update()에서 프레임 데이터로 복사
+  - `static s_byRawKeyState[256]`, `static s_byRawMouseBtn[]`, `static s_lRawMouseAccum[]`: WndProc에서 누적
+  - `m_byKeyState[256]`, `m_byMouseBtnState[]`, `m_lMouseDelta[]`: 게임 로직이 읽는 프레임 데이터
+- `Process_Input(LPARAM)`: static 메서드, WndProc에서 호출. GetRawInputData()로 RAWINPUT 파싱 → 키보드(VK_* 코드, 0x80/0x00) + 마우스(이동 누적, 버튼 상태, 휠 delta)
+- `Initialize(HWND)`: RegisterRawInputDevices()로 키보드(0x06) + 마우스(0x02) 등록
+- `Update()`: static 버퍼 → 인스턴스 버퍼 memcpy, 마우스 이동 누적값 ZeroMemory 초기화 (키/버튼 상태는 유지)
+- 키 식별: VK_* Virtual Key Code 사용 (`<Windows.h>` 포함, DIK_* 스캔코드 불필요)
+- enum: `MOUSEBTN { LBUTTON, RBUTTON, MBUTTON, END }`, `MOUSEAXIS { X, Y, WHEEL, END }`
+- **WndProc 연결**: Client WndProc → `CGameInstance::Process_RawInput(lParam)` → `CInput_Device::Process_Input(lParam)` (CGameInstance facade 패턴 유지)
+- **미완료**: CGameInstance에 Input_Device 멤버/위임 메서드 통합, Camera_Free에서 입력 사용
+
+### PipeLine System (CPipeLine)
+- `CPipeLine` (final): CBase 상속. ENGINE_DLL 없음 (CGameInstance 통해서만 접근)
+- 카메라가 Set_Transform()으로 View/Proj 행렬 저장 → Update()에서 역행렬 자동 계산 + 카메라 월드 위치 추출
+- `m_TransformStateMatrices[D3DTS::END]`: View/Proj 원본 행렬 (`_float4x4`)
+- `m_TransformStateInverseMatrices[D3DTS::END]`: 역행렬 (XMMatrixInverse)
+- `m_vCamPosition`: View 역행렬 4번째 행에서 추출한 카메라 월드 좌표 (`_float4`)
+- `Set_Transform(D3DTS, _fmatrix)`: SIMD → `_float4x4` 변환 저장 (XMStoreFloat4x4)
+- `Get_Transform(D3DTS)` / `Get_Transform_Inverse(D3DTS)`: `const _float4x4*` 반환
+- 생성자에서 모든 행렬을 항등행렬로 초기화
+- **미완료**: CGameInstance에 PipeLine 멤버/위임 메서드 통합, CCamera에서 PipeLine 참조 연결
+
 ### Camera System (CCamera)
 - `CCamera` (abstract): CGameObject 상속. 카메라 전용 중간 클래스
 - `CAMERA_DESC`: GAMEOBJECT_DESC 상속. vEye(카메라 위치), vAt(바라볼 지점), fFovy(수직 시야각), fNear/fFar(클리핑 평면). eTransformType은 GAMEOBJECT_DESC 기본값(TRANSFORM_3D) 그대로 사용
 - `Initialize(pArg)`: DESC에서 fFovy/fNear/fFar 추출 → `__super::Initialize(pArg)`로 CTransform_3D 생성 → `Set_State(POSITION, vEye)` + `LookAt(vAt)` (CTransform_3D로 다운캐스팅 필요)
-- `Clone() = PURE`: abstract 클래스이므로 Client에서 구체 카메라(FreeCamera 등)가 구현
-- `m_pPipeLine`: CPipeLine 참조 (향후 구현 예정, 현재 nullptr)
+- `Clone() = PURE`: abstract 클래스이므로 Client에서 구체 카메라(Camera_Free 등)가 구현
+- `m_pPipeLine`: CPipeLine 참조 보유 (Update_PipeLine()에서 View 행렬을 PipeLine에 세팅하는 용도)
 - 멤버 변수 `protected` 접근 제어: 파생 클래스에서 fFovy/fNear/fFar/pPipeLine 접근 필요
+- **미완료**: Camera_Free(Client측 FPS 카메라), CGameInstance 통합 후 PipeLine 연결
 
 ### Vertex Format & InputLayout Embedding
 - 정점 구조체에 `static constexpr D3D11_INPUT_ELEMENT_DESC Elements[]`와 `static const unsigned int iNumElements`를 내장

@@ -34,9 +34,6 @@ namespace Engine
 	static const _wstring g_strTransformTag = TEXT("Com_Transform");
 }
 
-#define DIRECTINPUT_VERSION	0x0800
-#include <dinput.h>
-
 #pragma warning(disable : 4251)
 
 #ifdef _DEBUG
