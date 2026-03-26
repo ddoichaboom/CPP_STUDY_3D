@@ -26,8 +26,12 @@ public:
 	virtual void			Late_Update(_float fTimeDelta);
 	virtual HRESULT			Render();
 
+public:
+	void					Update_PipeLine();		
+
 protected:
-	_float					m_fFovy{}, m_fNear{}, m_fFar{};
+	_float					m_fFovy{}, m_fAspect{}, m_fNear{}, m_fFar{};
+	_float4x4				m_ProjMatrix = {};
 	class CPipeLine*		m_pPipeLine = { nullptr };
 
 public:

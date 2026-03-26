@@ -11,6 +11,7 @@ namespace Client
 	enum class LEVEL { STATIC, LOADING, LOGO, GAMEPLAY, END };
 }
 
-extern HWND	g_hWnd;
+extern HINSTANCE	g_hInstance;
+extern HWND			g_hWnd;
 
 using namespace Client;

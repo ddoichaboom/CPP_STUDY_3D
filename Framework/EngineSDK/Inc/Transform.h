@@ -23,12 +23,12 @@ protected:
 	virtual ~CTransform() = default;
 
 public:
-	_vector Get_State(STATE eState)
+	_vector					Get_State(STATE eState)
 	{
 		return XMLoadFloat4(reinterpret_cast<_float4*>(&m_WorldMatrix.m[ETOUI(eState)]));
 	}
 
-	_float3 Get_Scale() 
+	_float3					Get_Scale() 
 	{
 		return _float3{
 			XMVectorGetX(XMVector3Length(Get_State(STATE::RIGHT))),
@@ -37,9 +37,13 @@ public:
 		};
 	}
 
-	void Set_State(STATE eState, _fvector vState)
+	void					Set_State(STATE eState, _fvector vState)
 	{
 		XMStoreFloat4(reinterpret_cast<_float4*>(&m_WorldMatrix.m[ETOUI(eState)]), vState);
+	}
+
+	const _float4x4*		Get_WorldMatrixPtr() const {
+		return &m_WorldMatrix;
 	}
 
 public:

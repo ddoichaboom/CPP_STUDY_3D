@@ -50,6 +50,21 @@ public:
 	void						Add_RenderGroup(RENDERID eGroupID, class CGameObject* pGameObject);
 #pragma endregion
 
+#pragma region PIPELINE
+	const _float4x4*			Get_Transform(D3DTS eState) const;
+	const _float4x4*			Get_Transform_Inverse(D3DTS eState) const;
+	const _float4*				Get_CamPosition() const;
+	void						Set_Transform(D3DTS eState, _fmatrix StateMatrix);
+#pragma endregion
+
+#pragma region INPUT_DEVICE
+	_byte						Get_KeyState(_ubyte byKeyID);
+	_byte						Get_MouseBtnState(MOUSEBTN eBtn);
+	_long						Get_MouseDelta(MOUSEAXIS eAxis);
+	static void					Process_RawInput(LPARAM lParam);
+
+#pragma endregion
+
 private:
 	class CGraphic_Device*		m_pGraphic_Device = { nullptr };
 	class CTimer_Manager*		m_pTimer_Manager = { nullptr };
@@ -57,6 +72,8 @@ private:
 	class CPrototype_Manager*	m_pPrototype_Manager = { nullptr };
 	class CObject_Manager*		m_pObject_Manager = { nullptr };
 	class CRenderer*			m_pRenderer = { nullptr };
+	class CPipeLine*			m_pPipeLine = { nullptr };
+	class CInput_Device*		m_pInput_Device = { nullptr };
 	
 public:
 	void						Release_Engine();

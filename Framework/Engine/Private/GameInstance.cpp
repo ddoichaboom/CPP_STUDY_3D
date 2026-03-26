@@ -4,6 +4,8 @@
 #include "Level_Manager.h"
 #include "Object_Manager.h"
 #include "Renderer.h"
+#include "PipeLine.h"
+#include "Input_Device.h"
 
 IMPLEMENT_SINGLETON(CGameInstance)
 
@@ -39,14 +41,27 @@ HRESULT CGameInstance::Initialize_Engine(const ENGINE_DESC& EngineDesc, ID3D11De
 	if (nullptr == m_pRenderer)
 		return E_FAIL;
 
+	m_pPipeLine = CPipeLine::Create();
+	if (nullptr == m_pPipeLine)
+		return E_FAIL;
+
+	m_pInput_Device = CInput_Device::Create(EngineDesc.hWnd);
+	if (nullptr == m_pInput_Device)
+		return E_FAIL;
+
 	return S_OK;
 }
 
 void CGameInstance::Update_Engine(_float fTimeDelta)
 {
-	m_pObject_Manager->Priority_Update(fTimeDelta);
-	m_pObject_Manager->Update(fTimeDelta);
-	m_pObject_Manager->Late_Update(fTimeDelta);
+	m_pInput_Device->Update();							// (1) 누적 Raw Input -> 프레임 데이터 복사
+
+	m_pObject_Manager->Priority_Update(fTimeDelta);		// (2) 카메라 이동 처리
+	m_pObject_Manager->Update(fTimeDelta);				// (3) 카메라 -> PipeLine 세팅
+
+	m_pPipeLine->Update();								// (4) 역행렬 계산, 카메라 위치 추출
+
+	m_pObject_Manager->Late_Update(fTimeDelta);			// (5) 렌더 등록
 
 	m_pLevel_Manager->Update(fTimeDelta);
 }
@@ -155,9 +170,56 @@ void CGameInstance::Add_RenderGroup(RENDERID eGroupID, class CGameObject* pGameO
 
 #pragma endregion
 
+#pragma region PIPELINE
+const _float4x4* CGameInstance::Get_Transform(D3DTS eState) const
+{
+	return m_pPipeLine->Get_Transform(eState);
+}
+
+const _float4x4* CGameInstance::Get_Transform_Inverse(D3DTS eState) const
+{
+	return m_pPipeLine->Get_Transform_Inverse(eState);
+}
+
+const _float4* CGameInstance::Get_CamPosition() const
+{
+	return m_pPipeLine->Get_CamPosition();
+}
+
+void			CGameInstance::Set_Transform(D3DTS eState, _fmatrix StateMatrix)
+{
+	m_pPipeLine->Set_Transform(eState, StateMatrix);
+}
+
+#pragma endregion
+
+#pragma region INPUT_DEVICE
+_byte			CGameInstance::Get_KeyState(_ubyte byKeyID)
+{
+	return m_pInput_Device->Get_KeyState(byKeyID);
+}
+
+_byte			CGameInstance::Get_MouseBtnState(MOUSEBTN eBtn)
+{
+	return m_pInput_Device->Get_MouseBtnState(eBtn);
+}
+
+_long			CGameInstance::Get_MouseDelta(MOUSEAXIS eAxis)
+{
+	return m_pInput_Device->Get_MouseDelta(eAxis);
+}
+
+void		CGameInstance::Process_RawInput(LPARAM lParam)
+{
+	CInput_Device::Process_Input(lParam);
+}
+
+#pragma endregion
 
 void CGameInstance::Release_Engine()
 {
+	Safe_Release(m_pInput_Device);
+	Safe_Release(m_pPipeLine);
 	Safe_Release(m_pRenderer);
 	Safe_Release(m_pObject_Manager);
 	Safe_Release(m_pPrototype_Manager);

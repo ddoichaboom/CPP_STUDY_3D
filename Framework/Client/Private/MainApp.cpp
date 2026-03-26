@@ -12,11 +12,12 @@ CMainApp::CMainApp()
 HRESULT CMainApp::Initialize()
 {
 	ENGINE_DESC		EngineDesc{};
-	EngineDesc.hWnd = g_hWnd;
-	EngineDesc.eWinMode = WINMODE::WIN;
-	EngineDesc.iViewportWidth = g_iWinSizeX;
-	EngineDesc.iViewportHeight = g_iWinSizeY;
-	EngineDesc.iNumLevels = ETOUI(LEVEL::END);
+	EngineDesc.hWnd				= g_hWnd;
+	EngineDesc.hInstance		= g_hInstance;
+	EngineDesc.eWinMode			= WINMODE::WIN;
+	EngineDesc.iViewportWidth	= g_iWinSizeX;
+	EngineDesc.iViewportHeight	= g_iWinSizeY;
+	EngineDesc.iNumLevels		= ETOUI(LEVEL::END);
 
 	if (FAILED(m_pGameInstance->Initialize_Engine(EngineDesc, &m_pDevice, &m_pContext)))
 	{

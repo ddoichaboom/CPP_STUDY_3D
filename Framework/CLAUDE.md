@@ -34,7 +34,8 @@ CBase (ref counting)
 │       └── CVIBuffer_Terrain (final) — terrain mesh from heightmap
 ├── CLevel (abstract) — base for game levels (Logo, Loading, GamePlay)
 ├── CGameObject (abstract) — base for game entities, auto-creates CTransform (3D/2D by TRANSFORMTYPE), supports Clone pattern, GAMEOBJECT_DESC
-│   └── CCamera (abstract) — camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), sets Transform position+LookAt, references CPipeLine
+│   └── CCamera (abstract) — camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), Update_PipeLine, m_ProjMatrix
+│       └── CCamera_Free (Client) — FPS 자유 카메라: WASD 이동 + 마우스 Yaw/Pitch, fMouseSensor
 ├── CUIObject (abstract) — base for UI entities, inherits CGameObject, screen-space positioning via Update_UIState, orthographic View/Proj matrices
 ├── CLayer — groups GameObjects at the same depth, delegates update/render
 ├── CLevel_Manager (singleton) — manages current level and transitions
@@ -83,7 +84,7 @@ Framework/
 │   │   ├── Engine_Struct.h         — ENGINE_DESC, VTXTEX (Position + Texcoord + embedded Elements[]), VTXNORTEX (Position + Normal + Texcoord + embedded Elements[])
 │   │   ├── Engine_Typedef.h        — Type aliases: _float, _int, _uint, _float2/3/4, _float4x4, _vector/_fvector, _matrix/_fmatrix
 │   │   ├── Base.h                  — Abstract base class: reference counting (AddRef/Release)
-│   │   ├── GameInstance.h          — Singleton: engine initialization, subsystem delegation (incl. Renderer)
+│   │   ├── GameInstance.h          — Singleton: engine initialization, subsystem delegation (Renderer, Input_Device, PipeLine)
 │   │   ├── Graphic_Device.h        — D3D11 device, swap chain, render target, depth stencil management
 │   │   ├── Timer.h                 — High-resolution timer via QueryPerformanceCounter
 │   │   ├── Timer_Manager.h         — Named timer map manager (create, update, get delta)
@@ -104,7 +105,7 @@ Framework/
 │   │   ├── VIBuffer_Terrain.h      — Terrain mesh from heightmap BMP: VTXNORTEX vertices, 32-bit indices, Create(pHeightMapFilePath)
 │   │   ├── Shader.h                — CShader component: FX11 Effect wrapper, HLSL compilation, per-pass InputLayout, Begin(passIndex), Bind_Matrix/Bind_SRV
 │   │   ├── Camera.h                — Abstract camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), CPipeLine ref, Clone = PURE
-│   │   ├── Input_Device.h          — Raw Input 기반 입력 장치: 키보드(VK_*), 마우스(버튼/이동/휠), static 누적→프레임 복사 2단계 구조
+│   │   ├── Input_Device.h          — Raw Input 기반 입력 장치: 키보드('W' 등 문자 리터럴), 마우스(버튼/이동/휠), static 누적→프레임 복사 2단계 구조
 │   │   ├── PipeLine.h              — View/Proj 행렬 저장소: Get/Set_Transform, 역행렬 자동 계산, 카메라 월드 위치 추출
 │   │   ├── Texture.h               — CTexture component: multi-texture SRV array, DDS/WIC loading, Bind_ShaderResource
 │   │   ├── fx11/                   — DirectX Effects 11 headers
@@ -115,7 +116,7 @@ Framework/
 │   │       └── WICTextureLoader.h  — WIC-based image loading: JPG/PNG/BMP (CreateWICTextureFromFile)
 │   ├── Private/                    — Engine implementation files
 │   │   ├── Base.cpp                — Reference counting: AddRef increments, Release decrements and auto-frees
-│   │   ├── GameInstance.cpp         — Initializes all subsystems, delegates calls to managers
+│   │   ├── GameInstance.cpp         — Initializes all subsystems (incl. Input_Device, PipeLine), delegates calls, Update 5단계 순서 관리
 │   │   ├── Graphic_Device.cpp      — D3D11 device creation, swap chain setup, clear/present operations
 │   │   ├── Timer.cpp               — Frame delta calculation using CPU tick frequency
 │   │   ├── Timer_Manager.cpp       — Named timer map CRUD operations
@@ -130,7 +131,7 @@ Framework/
 │   │   ├── Transform.cpp           — Transform base: init (Identity matrix), Bind_ShaderResource, Set_Scale/Scaling
 │   │   ├── Transform_3D.cpp        — 3D movement/rotation implementation, Create/Clone lifecycle
 │   │   ├── Transform_2D.cpp        — 2D movement implementation, Create/Clone lifecycle
-│   │   ├── Camera.cpp              — Camera base: Initialize extracts projection params, sets Transform position + LookAt via CTransform_3D cast
+│   │   ├── Camera.cpp              — Camera base: Initialize(Viewport→Aspect, 투영행렬 생성, Transform position+LookAt), Update→Update_PipeLine
 │   │   ├── Input_Device.cpp        — Raw Input 디바이스 등록, WM_INPUT 처리(Process_Input static), 프레임별 Update 복사
 │   │   ├── PipeLine.cpp            — 생성자에서 항등행렬 초기화, Update()에서 역행렬 계산 + View 역행렬에서 카메라 위치 추출
 │   │   ├── UIObject.cpp            — UI base: Initialize (screen→world via Update_UIState, ortho View/Proj), Bind_ShaderResource(D3DTS)
@@ -154,18 +155,20 @@ Framework/
 │   │   ├── MainApp.h               — Main app class: engine init, update/render loop delegation
 │   │   ├── Level_Logo.h            — Logo level: Enter key triggers transition, Ready_Layer_BackGround
 │   │   ├── Level_Loading.h         — Loading level: runs loader thread, transitions when complete
-│   │   ├── Level_GamePlay.h        — Gameplay level: Ready_Layer_Terrain, spawns Terrain objects
+│   │   ├── Level_GamePlay.h        — Gameplay level: Ready_Layer_Camera + Ready_Layer_Terrain
 │   │   ├── Loader.h                — Multi-threaded asset loader with CGameInstance for prototype registration (incl. textures)
 │   │   ├── BackGround.h            — Background UI object (inherits CUIObject): BACKGROUND_DESC, CShader/CTexture/CVIBuffer_Rect, UI render group
-│   │   └── Terrain.h               — Terrain game object: TERRAIN_DESC, CShader/CTexture/CVIBuffer_Terrain, NONBLEND render group
+│   │   ├── Terrain.h               — Terrain game object: TERRAIN_DESC, CShader/CTexture/CVIBuffer_Terrain, NONBLEND render group
+│   │   └── Camera_Free.h           — FPS 자유 카메라: CAMERA_FREE_DESC (fMouseSensor), WASD + 마우스 회전
 │   ├── Private/                    — Client implementation files
 │   │   ├── MainApp.cpp             — Engine initialization with ENGINE_DESC, Ready_Prototype_For_Static (VIBuffer_Rect + Shader_VtxTex via VTXTEX::Elements), starts logo level
 │   │   ├── Level_Logo.cpp          — Logo display, Ready_Layer_BackGround adds BackGround via Add_GameObject
 │   │   ├── Level_Loading.cpp       — Spawns loader thread, transitions on completion
-│   │   ├── Level_GamePlay.cpp      — Gameplay level: Ready_Layer_Terrain creates Terrain via Add_GameObject
-│   │   ├── Loader.cpp              — Worker thread loading (CoInitializeEx for WIC), registers Logo(Texture_BackGround + BackGround) and GamePlay(Texture_Terrain + Shader_VtxNorTex + VIBuffer_Terrain + Terrain) prototypes
+│   │   ├── Level_GamePlay.cpp      — Gameplay level: Ready_Layer_Camera + Ready_Layer_Terrain, 카메라를 Terrain보다 먼저 생성
+│   │   ├── Loader.cpp              — Worker thread loading (CoInitializeEx for WIC), registers Logo(Texture_BackGround + BackGround) and GamePlay(Texture_Terrain + Shader_VtxNorTex + VIBuffer_Terrain + Terrain + Camera_Free) prototypes
 │   │   ├── BackGround.cpp          — Background UI object: Ready_Components, Bind_ShaderResources (World + UI View/Proj + texture), UI render group, Move_X via CTransform_2D
-│   │   └── Terrain.cpp             — Terrain object: Ready_Components (Shader_VtxNorTex/VIBuffer_Terrain/Texture_Terrain), temporary hardcoded View/Proj matrices, NONBLEND render group
+│   │   ├── Terrain.cpp             — Terrain object: Ready_Components (Shader_VtxNorTex/VIBuffer_Terrain/Texture_Terrain), PipeLine에서 View/Proj 행렬 사용, NONBLEND render group
+│   │   └── Camera_Free.cpp         — FPS 카메라: Priority_Update에서 WASD 이동 + 마우스 Yaw(Y축)/Pitch(Right축) 회전, __super로 Update_PipeLine 호출
 │   ├── Bin/                        — Build output: Client.exe, Client.pdb (+ copied Engine.dll)
 │   │   ├── ShaderFiles/
 │   │   │   ├── Shader_VtxTex.hlsl  — HLSL Effect file (VTXTEX): VS_MAIN (WVP transform), PS_MAIN (texture sampling + alpha test + grayscale), technique11
@@ -194,6 +197,7 @@ When initializing the engine in `CMainApp::Initialize()`, **MUST** set all field
 ```cpp
 ENGINE_DESC EngineDesc{};
 EngineDesc.hWnd = g_hWnd;
+EngineDesc.hInstance = g_hInstance;
 EngineDesc.eWinMode = WINMODE::WIN;
 EngineDesc.iViewportWidth = g_iWinSizeX;
 EngineDesc.iViewportHeight = g_iWinSizeY;
@@ -242,7 +246,7 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
   - `Bind_ShaderResource(pShader, pConstantName)`: 자신의 WorldMatrix를 CShader::Bind_Matrix로 전달
   - Initialize_Prototype()에서 `XMMatrixIdentity()`로 WorldMatrix 항등행렬 초기화. 복사 생성자에서 WorldMatrix 복사
 - `CGameObject::Initialize(void* pArg)` 에서 `GAMEOBJECT_DESC::eTransformType`에 따라 `CTransform_3D::Create()` 또는 `CTransform_2D::Create()`로 트랜스폼 자동 생성. pArg가 nullptr이면 기본값 TRANSFORM_3D
-- Descriptor 상속 체인: `TRANSFORM_DESC` → `GAMEOBJECT_DESC` (+ iFlag, eTransformType=TRANSFORM_3D 기본값) → `CAMERA_DESC` (+ vEye/vAt/fFovy/fNear/fFar) / `UIOBJECT_DESC` (+ fCenterX/Y, fSizeX/Y, 생성자에서 eTransformType=TRANSFORM_2D) → `BACKGROUND_DESC` / `TERRAIN_DESC` (Client측 확장)
+- Descriptor 상속 체인: `TRANSFORM_DESC` → `GAMEOBJECT_DESC` (+ iFlag, eTransformType=TRANSFORM_3D 기본값) → `CAMERA_DESC` (+ vEye/vAt/fFovy/fNear/fFar) → `CAMERA_FREE_DESC` (+ fMouseSensor) / `UIOBJECT_DESC` (+ fCenterX/Y, fSizeX/Y, 생성자에서 eTransformType=TRANSFORM_2D) → `BACKGROUND_DESC` / `TERRAIN_DESC` (Client측 확장)
 - `CTransform::Initialize(pArg)`: pArg가 nullptr이면 기본값으로 조기 리턴, 아니면 TRANSFORM_DESC로 캐스팅하여 속도/회전 설정
 
 ### UIObject System (CUIObject)
@@ -260,13 +264,13 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - **2단계 데이터 흐름**: WndProc의 WM_INPUT → static 누적 버퍼 → Update()에서 프레임 데이터로 복사
   - `static s_byRawKeyState[256]`, `static s_byRawMouseBtn[]`, `static s_lRawMouseAccum[]`: WndProc에서 누적
   - `m_byKeyState[256]`, `m_byMouseBtnState[]`, `m_lMouseDelta[]`: 게임 로직이 읽는 프레임 데이터
-- `Process_Input(LPARAM)`: static 메서드, WndProc에서 호출. GetRawInputData()로 RAWINPUT 파싱 → 키보드(VK_* 코드, 0x80/0x00) + 마우스(이동 누적, 버튼 상태, 휠 delta)
+- `Process_Input(LPARAM)`: static 메서드, WndProc에서 호출. GetRawInputData()로 RAWINPUT 파싱 → 키보드(Virtual Key Code, 0x80/0x00) + 마우스(이동 누적, 버튼 상태, 휠 delta)
 - `Initialize(HWND)`: RegisterRawInputDevices()로 키보드(0x06) + 마우스(0x02) 등록
 - `Update()`: static 버퍼 → 인스턴스 버퍼 memcpy, 마우스 이동 누적값 ZeroMemory 초기화 (키/버튼 상태는 유지)
-- 키 식별: VK_* Virtual Key Code 사용 (`<Windows.h>` 포함, DIK_* 스캔코드 불필요)
+- 키 식별: Virtual Key Code 사용 — 특수 키는 VK_SPACE 등 매크로, 알파벳(A~Z)/숫자(0~9)는 문자 리터럴('W' = 0x57) 사용 (DIK_* 스캔코드 불필요)
 - enum: `MOUSEBTN { LBUTTON, RBUTTON, MBUTTON, END }`, `MOUSEAXIS { X, Y, WHEEL, END }`
 - **WndProc 연결**: Client WndProc → `CGameInstance::Process_RawInput(lParam)` → `CInput_Device::Process_Input(lParam)` (CGameInstance facade 패턴 유지)
-- **미완료**: CGameInstance에 Input_Device 멤버/위임 메서드 통합, Camera_Free에서 입력 사용
+- CGameInstance 위임 메서드: `Get_KeyState`, `Get_MouseBtnState`, `Get_MouseDelta`, `Process_RawInput`(static)
 
 ### PipeLine System (CPipeLine)
 - `CPipeLine` (final): CBase 상속. ENGINE_DLL 없음 (CGameInstance 통해서만 접근)
@@ -277,7 +281,8 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - `Set_Transform(D3DTS, _fmatrix)`: SIMD → `_float4x4` 변환 저장 (XMStoreFloat4x4)
 - `Get_Transform(D3DTS)` / `Get_Transform_Inverse(D3DTS)`: `const _float4x4*` 반환
 - 생성자에서 모든 행렬을 항등행렬로 초기화
-- **미완료**: CGameInstance에 PipeLine 멤버/위임 메서드 통합, CCamera에서 PipeLine 참조 연결
+- CGameInstance 위임 메서드: `Get_Transform`, `Get_Transform_Inverse`, `Get_CamPosition`, `Set_Transform`
+- Update 순서: `CGameInstance::Update_Engine()`에서 Input_Device→Update → Priority_Update → Update → PipeLine→Update → Late_Update
 
 ### Camera System (CCamera)
 - `CCamera` (abstract): CGameObject 상속. 카메라 전용 중간 클래스
@@ -285,8 +290,18 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - `Initialize(pArg)`: DESC에서 fFovy/fNear/fFar 추출 → `__super::Initialize(pArg)`로 CTransform_3D 생성 → `Set_State(POSITION, vEye)` + `LookAt(vAt)` (CTransform_3D로 다운캐스팅 필요)
 - `Clone() = PURE`: abstract 클래스이므로 Client에서 구체 카메라(Camera_Free 등)가 구현
 - `m_pPipeLine`: CPipeLine 참조 보유 (Update_PipeLine()에서 View 행렬을 PipeLine에 세팅하는 용도)
+- `Update_PipeLine()`: View(WorldMatrix 역행렬) + Proj를 `m_pGameInstance->Set_Transform()`으로 PipeLine에 전달
+- `m_ProjMatrix`: Initialize에서 `XMMatrixPerspectiveFovLH(fFovy, fAspect, fNear, fFar)`로 생성, 제로 초기화(사용 전 덮어쓰므로 항등행렬 불필요)
+- `m_fAspect`: Viewport에서 자동 계산 (`static_cast<_float>(Width) / Height` — 정수 나눗셈 주의)
 - 멤버 변수 `protected` 접근 제어: 파생 클래스에서 fFovy/fNear/fFar/pPipeLine 접근 필요
-- **미완료**: Camera_Free(Client측 FPS 카메라), CGameInstance 통합 후 PipeLine 연결
+
+### Camera_Free System (CCamera_Free — Client)
+- `CCamera_Free` (final): CCamera 상속. Client측 FPS 자유 카메라
+- `CAMERA_FREE_DESC`: CAMERA_DESC 상속. fMouseSensor(마우스 감도) 추가
+- `Priority_Update`: WASD 이동(`Get_KeyState('W')` 등 문자 리터럴) + 마우스 Yaw(Y축 Turn)/Pitch(Right축 Turn), `__super::Priority_Update()` 호출
+- `Update`: `__super::Update()` → `CCamera::Update()` → `Update_PipeLine()` 호출
+- Priority_Update에서 카메라 입력을 처리하는 이유: 다른 오브젝트의 Update/Late_Update에서 갱신된 View/Proj를 사용할 수 있도록
+- Loader에서 GamePlay 레벨용 프로토타입으로 등록, Level_GamePlay::Ready_Layer_Camera에서 Clone
 
 ### Vertex Format & InputLayout Embedding
 - 정점 구조체에 `static constexpr D3D11_INPUT_ELEMENT_DESC Elements[]`와 `static const unsigned int iNumElements`를 내장

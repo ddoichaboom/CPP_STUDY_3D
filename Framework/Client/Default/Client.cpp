@@ -11,7 +11,7 @@
 #define MAX_LOADSTRING 100
 
 // 전역 변수:
-HINSTANCE   hInst;                                      // 현재 인스턴스입니다.
+HINSTANCE   g_hInstance;                                      // 현재 인스턴스입니다.
 HWND        g_hWnd;                                    // 전역 변수 선언 ( 선언되어 있어야 extern 사용 가능 )
 WCHAR       szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
 WCHAR       szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름입니다.
@@ -144,7 +144,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
+    g_hInstance = hInstance; // 인스턴스 핸들을 전역 변수에 저장합니다.
 
    RECT rcWindow = { 0, 0, g_iWinSizeX, g_iWinSizeY };
 
@@ -184,6 +184,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_INPUT:
+        CGameInstance::Process_RawInput(lParam);
+        break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -191,7 +194,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (wmId)
             {
             case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+                DialogBox(g_hInstance, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
             case IDM_EXIT:
                 DestroyWindow(hWnd);
