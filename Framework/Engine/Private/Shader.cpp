@@ -129,6 +129,17 @@ HRESULT CShader::Bind_SRV(const _char* pConstantName, ID3D11ShaderResourceView* 
 	return pSRVariable->SetResource(pSRV);
 }
 
+HRESULT CShader::Bind_RawValue(const _char* pConstantName, const void* pValue, _uint iLength)
+{
+	// (1) Effect에서 이름으로 검색
+	ID3DX11EffectVariable* pVariable = m_pEffect->GetVariableByName(pConstantName);
+	if (!pVariable->IsValid())
+		return E_FAIL;
+
+	// (2) SetRawValue로 바이트 단위 데이터 전송
+	return pVariable->SetRawValue(pValue, 0, iLength);
+}
+
 CShader* CShader::Create(ID3D11Device* pDevice, ID3D11DeviceContext* pContext, const _tchar* pShaderFilePath, const D3D11_INPUT_ELEMENT_DESC* pElements, _uint iNumElements)
 {
 	CShader* pInstance = new CShader(pDevice, pContext);

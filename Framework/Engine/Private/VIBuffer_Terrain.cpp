@@ -70,16 +70,8 @@ HRESULT CVIBuffer_Terrain::Initialize_Prototype(const _tchar* pHeightMapFilePath
         }
     }
 
-    D3D11_SUBRESOURCE_DATA          VertexInitialData{};
-    VertexInitialData.pSysMem               = pVertices;
 
-    if (FAILED(m_pDevice->CreateBuffer(&VertexBufferDesc, &VertexInitialData, &m_pVB)))
-        return E_FAIL;
-
-    Safe_Delete_Array(pVertices);
-
-
-    // (4) 인덱스 버퍼 생성
+    // (4) 인덱스 버퍼 생성 + 노멀 계산
     D3D11_BUFFER_DESC               IndexBufferDesc{};
     IndexBufferDesc.ByteWidth               = m_iIndexStride * m_iNumIndices;
     IndexBufferDesc.Usage                   = D3D11_USAGE_DEFAULT;
@@ -108,26 +100,60 @@ HRESULT CVIBuffer_Terrain::Initialize_Prototype(const _tchar* pHeightMapFilePath
                 iIndex
             };
 
+            _vector vSrc{}, vDst{}, vNor{};
+
             // 첫번째 삼각형 (우상단 - 대각선 기준)
             pIndices[iNumIndices++] = iIndices[0];
             pIndices[iNumIndices++] = iIndices[1];
             pIndices[iNumIndices++] = iIndices[2];
 
+            // 면 노멀 = Cross(edge1, edge2), 정규화
+            vSrc = XMLoadFloat3(&pVertices[iIndices[1]].vPosition) - XMLoadFloat3(&pVertices[iIndices[0]].vPosition);
+            vDst = XMLoadFloat3(&pVertices[iIndices[2]].vPosition) - XMLoadFloat3(&pVertices[iIndices[0]].vPosition);
+            vNor = XMVector3Normalize(XMVector3Cross(vSrc, vDst));
+
+            // 삼각형(면)을 구성하는 3개의 정점에 해당 노멀 값 누적
+            XMStoreFloat3(&pVertices[iIndices[0]].vNormal, XMLoadFloat3(&pVertices[iIndices[0]].vNormal) + vNor);
+            XMStoreFloat3(&pVertices[iIndices[1]].vNormal, XMLoadFloat3(&pVertices[iIndices[1]].vNormal) + vNor);
+            XMStoreFloat3(&pVertices[iIndices[2]].vNormal, XMLoadFloat3(&pVertices[iIndices[2]].vNormal) + vNor);
+                       
             // 두 번째 삼각형 (좌하단 - 대각선 기준)
             pIndices[iNumIndices++] = iIndices[0];
             pIndices[iNumIndices++] = iIndices[2];
-            pIndices[iNumIndices++] = iIndices[3];            
+            pIndices[iNumIndices++] = iIndices[3];           
+
+            // 면 노멀 = Cross(edge1, edge2), 정규화
+            vSrc = XMLoadFloat3(&pVertices[iIndices[2]].vPosition) - XMLoadFloat3(&pVertices[iIndices[0]].vPosition);
+            vDst = XMLoadFloat3(&pVertices[iIndices[3]].vPosition) - XMLoadFloat3(&pVertices[iIndices[0]].vPosition);
+            vNor = XMVector3Normalize(XMVector3Cross(vSrc, vDst));
+
+            // 삼각형(면)을 구성하는 3개의 정점에 해당 노멀 값 누적
+            XMStoreFloat3(&pVertices[iIndices[0]].vNormal, XMLoadFloat3(&pVertices[iIndices[0]].vNormal) + vNor);
+            XMStoreFloat3(&pVertices[iIndices[2]].vNormal, XMLoadFloat3(&pVertices[iIndices[2]].vNormal) + vNor);
+            XMStoreFloat3(&pVertices[iIndices[3]].vNormal, XMLoadFloat3(&pVertices[iIndices[3]].vNormal) + vNor);
         }
     }
 
+    // (5) 모든 정점의 노멀 정규화 (누적된 면 노멀들의 평균 방향)
+    for (size_t i = 0; i < m_iNumVertices; i++)
+        XMStoreFloat3(&pVertices[i].vNormal, XMVector3Normalize(XMLoadFloat3(&pVertices[i].vNormal)));
+
+    // (6) VB 생성 (노멀 계산 완료 후)
+    D3D11_SUBRESOURCE_DATA          VertexInitialData{};
+    VertexInitialData.pSysMem = pVertices;
+
+    if (FAILED(m_pDevice->CreateBuffer(&VertexBufferDesc, &VertexInitialData, &m_pVB)))
+        return E_FAIL;
+
+    // (7) IB 생성 
     D3D11_SUBRESOURCE_DATA          IndexInitialData{};
     IndexInitialData.pSysMem                = pIndices;
 
     if (FAILED(m_pDevice->CreateBuffer(&IndexBufferDesc, &IndexInitialData, &m_pIB)))
         return E_FAIL;
 
+    Safe_Delete_Array(pVertices);
     Safe_Delete_Array(pIndices);
-
     Safe_Delete_Array(pPixels);
 
     return S_OK;
