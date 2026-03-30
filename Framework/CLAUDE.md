@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 CBase (ref counting)
-├── CGameInstance (singleton) — central coordinator for graphics, timers, levels, objects, renderer, input, pipeline
+├── CGameInstance (singleton) — central coordinator for graphics, timers, levels, objects, renderer, input, pipeline, lights
 ├── CGraphic_Device — D3D11 device, context, swap chain initialization
 ├── CInput_Device (final) — Raw Input 기반 키보드/마우스 입력 처리, WndProc 이벤트 → 프레임 데이터 2단계 구조
 ├── CPipeLine (final) — View/Proj 행렬 저장소, 역행렬 자동 계산, 카메라 월드 위치 추출
@@ -29,13 +29,16 @@ CBase (ref counting)
 │       └── CTransform_2D (final) — 2D movement: Move_X, Move_Y
 │   └── CShader (final) — FX11 Effect wrapper, HLSL compilation, Bind_Matrix/Bind_SRV, prototype/clone
 │   └── CTexture (final) — texture loading (DDS/WIC), multi-texture SRV array, Bind_ShaderResource
+│   └── CModel (final) — Assimp FBX 모델 로딩, vector<CMesh*> 관리, Render()로 전체 메시 순회 렌더링
 │   └── CVIBuffer (abstract) — vertex/index buffer base, IA stage binding, DrawIndexed
 │       └── CVIBuffer_Rect (final) — rectangle mesh (4 vertices, 6 indices, VTXTEX format)
 │       └── CVIBuffer_Terrain (final) — terrain mesh from heightmap
+│       └── CMesh (final) — aiMesh → VTXMESH GPU 버퍼 변환, CModel 내부에서만 사용, Clone()=nullptr
 ├── CLevel (abstract) — base for game levels (Logo, Loading, GamePlay)
 ├── CGameObject (abstract) — base for game entities, auto-creates CTransform (3D/2D by TRANSFORMTYPE), supports Clone pattern, GAMEOBJECT_DESC
 │   └── CCamera (abstract) — camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), Update_PipeLine, m_ProjMatrix
 │       └── CCamera_Free (Client) — FPS 자유 카메라: WASD 이동 + 마우스 Yaw/Pitch, fMouseSensor
+│   └── CMonster (Client, final) — CModel 기반 3D 오브젝트: Shader_VtxMesh + Model_ForkLift, Phong Lighting 렌더링
 ├── CUIObject (abstract) — base for UI entities, inherits CGameObject, screen-space positioning via Update_UIState, orthographic View/Proj matrices
 ├── CLayer — groups GameObjects at the same depth, delegates update/render
 ├── CLevel_Manager (singleton) — manages current level and transitions
@@ -43,13 +46,15 @@ CBase (ref counting)
 ├── CPrototype_Manager (singleton) — prototype registry, clones GameObjects by key
 ├── CObject_Manager (singleton) — level/layer-based GameObject lifecycle management
 ├── CRenderer (singleton-like) — render group management, ordered draw calls (Priority/NonBlend/Blend/UI)
+├── CLight (final) — individual light instance, stores LIGHT_DESC, CBase 상속 (CComponent 아님)
+├── CLight_Manager (final) — list<CLight*> 기반 광원 관리, CGameInstance가 소유 (싱글톤 아님)
 └── CLoader — threaded asset loading (HANDLE + CRITICAL_SECTION), CoInitializeEx for WIC
 ```
 
 **Key patterns:**
 - **Singletons** via `DECLARE_SINGLETON` / `IMPLEMENT_SINGLETON` macros
 - **Prototype/Clone** for GameObjects (register prototypes, clone instances)
-- **Component system**: CComponent abstract base → CTransform (abstract base) → CTransform_3D/CTransform_2D, CShader, CTexture, CVIBuffer. CGameObject auto-creates CTransform_3D or CTransform_2D based on GAMEOBJECT_DESC::eTransformType in Initialize(). CVIBuffer/CShader/CTexture uses Prototype/Clone with shared GPU resources
+- **Component system**: CComponent abstract base → CTransform (abstract base) → CTransform_3D/CTransform_2D, CShader, CTexture, CVIBuffer, CModel. CGameObject auto-creates CTransform_3D or CTransform_2D based on GAMEOBJECT_DESC::eTransformType in Initialize(). CVIBuffer/CShader/CTexture/CModel uses Prototype/Clone with shared GPU resources
 - **Descriptor chain**: TRANSFORM_DESC → GAMEOBJECT_DESC (+ iFlag, eTransformType=TRANSFORM_3D 기본값) → CAMERA_DESC (+ vEye/vAt/fFovy/fNear/fFar) / UIOBJECT_DESC (+ fCenterX/Y, fSizeX/Y, auto TRANSFORM_2D) → BACKGROUND_DESC / TERRAIN_DESC (Client측 확장). Passed through Initialize(void* pArg)
 - **Threaded loading** via CLoader for level transitions
 - **HRESULT error handling** with `if (FAILED(...)) return E_FAIL;` pattern and `NULL_CHECK` macro
@@ -77,14 +82,14 @@ CBase (ref counting)
 Framework/
 ├── Engine/                         — Core engine DLL project
 │   ├── Public/                     — Engine header files
-│   │   ├── Engine_Defines.h        — Master header: D3D11, DirectXMath, DirectXCollision, d3dcompiler, FX11(d3dx11effect.h), DirectXTK(DDSTextureLoader/WICTextureLoader), STL includes, debug memory tracking
-│   │   ├── Engine_Enum.h           — Enums: WINMODE, PROTOTYPE, TRANSFORMTYPE, RENDERID, STATE, D3DTS, MOUSEBTN, MOUSEAXIS
+│   │   ├── Engine_Defines.h        — Master header: D3D11, DirectXMath, DirectXCollision, d3dcompiler, FX11(d3dx11effect.h), DirectXTK(DDSTextureLoader/WICTextureLoader), Assimp(scene.h/Importer.hpp/postprocess.h), STL includes, debug memory tracking
+│   │   ├── Engine_Enum.h           — Enums: WINMODE, PROTOTYPE, TRANSFORMTYPE, RENDERID, STATE, D3DTS, MOUSEBTN, MOUSEAXIS, LIGHT
 │   │   ├── Engine_Function.h       — Template utilities: Safe_Delete, Safe_Release, Safe_AddRef
 │   │   ├── Engine_Macro.h          — Macros: ETOI/ETOUI, NULL_CHECK, FAILED_CHECK, SINGLETON, DLL export, PURE (= 0)
-│   │   ├── Engine_Struct.h         — ENGINE_DESC, VTXTEX (Position + Texcoord + embedded Elements[]), VTXNORTEX (Position + Normal + Texcoord + embedded Elements[])
+│   │   ├── Engine_Struct.h         — ENGINE_DESC, LIGHT_DESC (eType/vDiffuse/vAmbient/vSpecular/vDirection/vPosition/fRange), VTXTEX (Position + Texcoord + embedded Elements[]), VTXNORTEX (Position + Normal + Texcoord + embedded Elements[]), VTXMESH (Position + Normal + Texcoord + Tangent + Binormal + embedded Elements[])
 │   │   ├── Engine_Typedef.h        — Type aliases: _float, _int, _uint, _float2/3/4, _float4x4, _vector/_fvector, _matrix/_fmatrix
 │   │   ├── Base.h                  — Abstract base class: reference counting (AddRef/Release)
-│   │   ├── GameInstance.h          — Singleton: engine initialization, subsystem delegation (Renderer, Input_Device, PipeLine)
+│   │   ├── GameInstance.h          — Singleton: engine initialization, subsystem delegation (Renderer, Input_Device, PipeLine, Light_Manager)
 │   │   ├── Graphic_Device.h        — D3D11 device, swap chain, render target, depth stencil management
 │   │   ├── Timer.h                 — High-resolution timer via QueryPerformanceCounter
 │   │   ├── Timer_Manager.h         — Named timer map manager (create, update, get delta)
@@ -94,7 +99,7 @@ Framework/
 │   │   ├── UIObject.h              — UI game object abstract base: UIOBJECT_DESC, Update_UIState, orthographic View/Proj, Bind_ShaderResource(D3DTS)
 │   │   ├── Layer.h                 — Groups GameObjects at same depth, delegates update/render
 │   │   ├── Object_Manager.h        — Level/layer-indexed GameObject lifecycle manager (singleton)
-│   │   ├── Prototype_Manager.h     — Level-indexed prototype storage, type-aware cloning (GAMEOBJECT/COMPONENT)
+│   │   ├── Prototype_Manager.h     — Level-indexed prototype storage, type-aware cloning (GAMEOBJECT/COMPONENT), includes Model/Shader/Texture/VIBuffer headers
 │   │   ├── Renderer.h              — Render group manager: collects GameObjects per frame, draws in render order
 │   │   ├── Component.h             — Abstract component base: Device/Context refs, prototype/clone lifecycle
 │   │   ├── Transform.h             — Transform abstract base: world matrix, Get/Set_State, Get_Scale, Set_Scale/Scaling, Bind_ShaderResource
@@ -104,19 +109,24 @@ Framework/
 │   │   ├── VIBuffer_Rect.h         — Rectangle mesh: 4 VTXTEX vertices, 6 indices, TRIANGLELIST topology
 │   │   ├── VIBuffer_Terrain.h      — Terrain mesh from heightmap BMP: VTXNORTEX vertices, 32-bit indices, Create(pHeightMapFilePath)
 │   │   ├── Shader.h                — CShader component: FX11 Effect wrapper, HLSL compilation, per-pass InputLayout, Begin(passIndex), Bind_Matrix/Bind_SRV
+│   │   ├── Mesh.h                  — CMesh: CVIBuffer 상속, aiMesh → VTXMESH GPU 버퍼 변환, CModel 내부 전용 (Clone()=nullptr)
+│   │   ├── Model.h                 — CModel: CComponent 상속, Assimp FBX 로딩, vector<CMesh*> 관리, Render()로 메시 순회
 │   │   ├── Camera.h                — Abstract camera base: CAMERA_DESC (vEye/vAt/fFovy/fNear/fFar), CPipeLine ref, Clone = PURE
 │   │   ├── Input_Device.h          — Raw Input 기반 입력 장치: 키보드('W' 등 문자 리터럴), 마우스(버튼/이동/휠), static 누적→프레임 복사 2단계 구조
 │   │   ├── PipeLine.h              — View/Proj 행렬 저장소: Get/Set_Transform, 역행렬 자동 계산, 카메라 월드 위치 추출
 │   │   ├── Texture.h               — CTexture component: multi-texture SRV array, DDS/WIC loading, Bind_ShaderResource
+│   │   ├── Light.h                 — CLight: CBase 상속, LIGHT_DESC 저장, Device/Context 보유 (향후 Shadow Map 등 확장용)
+│   │   ├── Light_Manager.h         — CLight_Manager: list<CLight*> 관리, Add_Light/Get_LightDesc(인덱스), CGameInstance 소유
 │   │   ├── fx11/                   — DirectX Effects 11 headers
 │   │   │   ├── d3dx11effect.h      — ID3DX11Effect interface definitions (FX11 library)
 │   │   │   └── d3dxGlobal.h        — FX11 global utility definitions
-│   │   └── DirectXTK/              — DirectX Tool Kit headers
-│   │       ├── DDSTextureLoader.h  — DDS texture file loading (CreateDDSTextureFromFile)
-│   │       └── WICTextureLoader.h  — WIC-based image loading: JPG/PNG/BMP (CreateWICTextureFromFile)
+│   │   ├── DirectXTK/              — DirectX Tool Kit headers
+│   │   │   ├── DDSTextureLoader.h  — DDS texture file loading (CreateDDSTextureFromFile)
+│   │   │   └── WICTextureLoader.h  — WIC-based image loading: JPG/PNG/BMP (CreateWICTextureFromFile)
+│   │   └── assimp/                 — Assimp (Open Asset Import Library) headers (scene.h, Importer.hpp, postprocess.h 등)
 │   ├── Private/                    — Engine implementation files
 │   │   ├── Base.cpp                — Reference counting: AddRef increments, Release decrements and auto-frees
-│   │   ├── GameInstance.cpp         — Initializes all subsystems (incl. Input_Device, PipeLine), delegates calls, Update 5단계 순서 관리
+│   │   ├── GameInstance.cpp         — Initializes all subsystems (incl. Input_Device, PipeLine, Light_Manager), delegates calls, Update 5단계 순서 관리
 │   │   ├── Graphic_Device.cpp      — D3D11 device creation, swap chain setup, clear/present operations
 │   │   ├── Timer.cpp               — Frame delta calculation using CPU tick frequency
 │   │   ├── Timer_Manager.cpp       — Named timer map CRUD operations
@@ -138,13 +148,19 @@ Framework/
 │   │   ├── VIBuffer.cpp            — VIBuffer base: copy ctor shares VB/IB with AddRef, Bind_Resources sets IA stage, Free releases buffers
 │   │   ├── VIBuffer_Rect.cpp       — Rect mesh prototype: creates VB(4 VTXTEX) and IB(6 _ushort) via CreateBuffer
 │   │   ├── VIBuffer_Terrain.cpp    — Terrain mesh: BMP heightmap → VTXNORTEX vertices (height from blue channel /10.f), 32-bit index grid generation
+│   │   ├── Mesh.cpp                — CMesh: aiMesh 정점(Position/Normal/Texcoord/Tangent/Binormal) → VTXMESH VB, _uint IB 생성
+│   │   ├── Model.cpp               — CModel: Assimp ReadFile(FBX), Ready_Meshes()로 CMesh 생성, 복사 생성자에서 메시 공유+AddRef
 │   │   ├── Shader.cpp              — CShader: D3DX11CompileEffectFromFile, per-pass InputLayout creation, Begin, Bind_Matrix/Bind_SRV, shared Effect/InputLayouts in clone
-│   │   └── Texture.cpp             — CTexture: multi-texture loading (DDS/WIC by extension), SRV array, Bind_ShaderResource, shared SRVs in clone
+│   │   ├── Texture.cpp             — CTexture: multi-texture loading (DDS/WIC by extension), SRV array, Bind_ShaderResource, shared SRVs in clone
+│   │   ├── Light.cpp               — CLight: Create(Device, Context, LIGHT_DESC), Initialize에서 DESC 복사, Free에서 Device/Context 해제
+│   │   └── Light_Manager.cpp       — CLight_Manager: Add_Light(CLight::Create → push_back), Get_LightDesc(list 순회), Free에서 전체 CLight 해제
 │   ├── ThirdPartyLib/              — Third-party static libraries
 │   │   ├── Effects11.lib           — FX11 library (Release)
 │   │   ├── Effects11d.lib          — FX11 library (Debug)
 │   │   ├── DirectXTK.lib           — DirectX Tool Kit (Release)
-│   │   └── DirectXTKd.lib          — DirectX Tool Kit (Debug)
+│   │   ├── DirectXTKd.lib          — DirectX Tool Kit (Debug)
+│   │   ├── assimp-vc143-mt.lib     — Assimp library (Release)
+│   │   └── assimp-vc143-mtd.lib    — Assimp library (Debug)
 │   └── Bin/                        — Build output: Engine.dll, Engine.lib, Engine.pdb
 │
 ├── Client/                         — Client application EXE project
@@ -155,26 +171,30 @@ Framework/
 │   │   ├── MainApp.h               — Main app class: engine init, update/render loop delegation
 │   │   ├── Level_Logo.h            — Logo level: Enter key triggers transition, Ready_Layer_BackGround
 │   │   ├── Level_Loading.h         — Loading level: runs loader thread, transitions when complete
-│   │   ├── Level_GamePlay.h        — Gameplay level: Ready_Layer_Camera + Ready_Layer_Terrain
+│   │   ├── Level_GamePlay.h        — Gameplay level: Ready_Lights + Ready_Layer_Camera + Ready_Layer_BackGround + Ready_Layer_Monster
 │   │   ├── Loader.h                — Multi-threaded asset loader with CGameInstance for prototype registration (incl. textures)
 │   │   ├── BackGround.h            — Background UI object (inherits CUIObject): BACKGROUND_DESC, CShader/CTexture/CVIBuffer_Rect, UI render group
 │   │   ├── Terrain.h               — Terrain game object: TERRAIN_DESC, CShader/CTexture/CVIBuffer_Terrain, NONBLEND render group
-│   │   └── Camera_Free.h           — FPS 자유 카메라: CAMERA_FREE_DESC (fMouseSensor), WASD + 마우스 회전
+│   │   ├── Camera_Free.h           — FPS 자유 카메라: CAMERA_FREE_DESC (fMouseSensor), WASD + 마우스 회전
+│   │   └── Monster.h               — CModel 기반 게임 오브젝트: MONSTER_DESC, CShader/CModel, NONBLEND 렌더 그룹
 │   ├── Private/                    — Client implementation files
 │   │   ├── MainApp.cpp             — Engine initialization with ENGINE_DESC, Ready_Prototype_For_Static (VIBuffer_Rect + Shader_VtxTex via VTXTEX::Elements), starts logo level
 │   │   ├── Level_Logo.cpp          — Logo display, Ready_Layer_BackGround adds BackGround via Add_GameObject
 │   │   ├── Level_Loading.cpp       — Spawns loader thread, transitions on completion
-│   │   ├── Level_GamePlay.cpp      — Gameplay level: Ready_Layer_Camera + Ready_Layer_Terrain, 카메라를 Terrain보다 먼저 생성
-│   │   ├── Loader.cpp              — Worker thread loading (CoInitializeEx for WIC), registers Logo(Texture_BackGround + BackGround) and GamePlay(Texture_Terrain + Shader_VtxNorTex + VIBuffer_Terrain + Terrain + Camera_Free) prototypes
+│   │   ├── Level_GamePlay.cpp      — Gameplay level: Ready_Lights → Ready_Layer_Camera → Ready_Layer_BackGround → Ready_Layer_Monster 순서
+│   │   ├── Loader.cpp              — Worker thread loading (CoInitializeEx for WIC), registers Logo(Texture_BackGround + BackGround) and GamePlay(Texture_Terrain + Shader_VtxNorTex + Shader_VtxMesh + VIBuffer_Terrain + Model_Fiona + Model_ForkLift + Terrain + Camera_Free + Monster) prototypes
 │   │   ├── BackGround.cpp          — Background UI object: Ready_Components, Bind_ShaderResources (World + UI View/Proj + texture), UI render group, Move_X via CTransform_2D
-│   │   ├── Terrain.cpp             — Terrain object: Ready_Components (Shader_VtxNorTex/VIBuffer_Terrain/Texture_Terrain), PipeLine에서 View/Proj 행렬 사용, NONBLEND render group
-│   │   └── Camera_Free.cpp         — FPS 카메라: Priority_Update에서 WASD 이동 + 마우스 Yaw(Y축)/Pitch(Right축) 회전, __super로 Update_PipeLine 호출
-│   ├── Bin/                        — Build output: Client.exe, Client.pdb (+ copied Engine.dll)
+│   │   ├── Terrain.cpp             — Terrain object: Ready_Components (Shader_VtxNorTex/VIBuffer_Terrain/Texture_Terrain), Bind_ShaderResources에서 WVP + 텍스처 + CamPosition + Light 바인딩, NONBLEND render group
+│   │   ├── Camera_Free.cpp         — FPS 카메라: Priority_Update에서 WASD 이동 + 마우스 Yaw(Y축)/Pitch(Right축) 회전, __super로 Update_PipeLine 호출
+│   │   └── Monster.cpp             — CMonster: Ready_Components (Shader_VtxMesh + Model_ForkLift), Bind_ShaderResources (WVP + CamPos + Light), m_pModelCom->Render()
+│   ├── Bin/                        — Build output: Client.exe, Client.pdb (+ copied Engine.dll, assimp-vc143-mt(d).dll)
 │   │   ├── ShaderFiles/
 │   │   │   ├── Shader_VtxTex.hlsl  — HLSL Effect file (VTXTEX): VS_MAIN (WVP transform), PS_MAIN (texture sampling + alpha test + grayscale), technique11
-│   │   │   └── Shader_VtxNorTex.hlsl — HLSL Effect file (VTXNORTEX): VS_IN with NORMAL semantic, WVP transform, texture sampling + alpha test, technique11
+│   │   │   ├── Shader_VtxNorTex.hlsl — HLSL Effect file (VTXNORTEX): Phong Lighting (Diffuse+Ambient+Specular), 빛/재질 변수 분리, C++에서 Bind_RawValue로 동적 바인딩
+│   │   │   └── Shader_VtxMesh.hlsl — HLSL Effect file (VTXMESH): TANGENT/BINORMAL 입력, 텍스처 미사용(1.f), Phong Lighting
 │   │   └── Resources/
-│   │       └── Textures/            — Texture image files (Default0.jpg, Default1.JPG, Terrain/Height.bmp, Terrain/Tile0.jpg, etc.)
+│   │       ├── Textures/            — Texture image files (Default0.jpg, Default1.JPG, Terrain/Height.bmp, Terrain/Tile0.jpg, etc.)
+│   │       └── Models/              — FBX 모델 리소스 (ForkLift/, Fiona/, Rock/, map/, Tong/, Test/)
 │
 ├── EngineSDK/                      — SDK distribution folder
 │   ├── Inc/                        — Copied Engine headers (via UpdateLib.bat)
@@ -183,7 +203,8 @@ Framework/
 │   │   ├── Shader.h                — (copied from Engine/Public)
 │   │   ├── VIBuffer.h              — (copied from Engine/Public)
 │   │   ├── VIBuffer_Rect.h         — (copied from Engine/Public)
-│   │   └── fx11/                   — (copied from Engine/Public)
+│   │   ├── fx11/                   — (copied from Engine/Public)
+│   │   └── assimp/                 — (copied from Engine/Public)
 │   └── Lib/                        — Copied Engine.lib (via UpdateLib.bat)
 │
 ├── UpdateLib.bat                   — Post-build: copies Engine headers → EngineSDK/Inc, lib → EngineSDK/Lib
@@ -246,7 +267,7 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
   - `Bind_ShaderResource(pShader, pConstantName)`: 자신의 WorldMatrix를 CShader::Bind_Matrix로 전달
   - Initialize_Prototype()에서 `XMMatrixIdentity()`로 WorldMatrix 항등행렬 초기화. 복사 생성자에서 WorldMatrix 복사
 - `CGameObject::Initialize(void* pArg)` 에서 `GAMEOBJECT_DESC::eTransformType`에 따라 `CTransform_3D::Create()` 또는 `CTransform_2D::Create()`로 트랜스폼 자동 생성. pArg가 nullptr이면 기본값 TRANSFORM_3D
-- Descriptor 상속 체인: `TRANSFORM_DESC` → `GAMEOBJECT_DESC` (+ iFlag, eTransformType=TRANSFORM_3D 기본값) → `CAMERA_DESC` (+ vEye/vAt/fFovy/fNear/fFar) → `CAMERA_FREE_DESC` (+ fMouseSensor) / `UIOBJECT_DESC` (+ fCenterX/Y, fSizeX/Y, 생성자에서 eTransformType=TRANSFORM_2D) → `BACKGROUND_DESC` / `TERRAIN_DESC` (Client측 확장)
+- Descriptor 상속 체인: `TRANSFORM_DESC` → `GAMEOBJECT_DESC` (+ iFlag, eTransformType=TRANSFORM_3D 기본값) → `CAMERA_DESC` (+ vEye/vAt/fFovy/fNear/fFar) → `CAMERA_FREE_DESC` (+ fMouseSensor) / `UIOBJECT_DESC` (+ fCenterX/Y, fSizeX/Y, 생성자에서 eTransformType=TRANSFORM_2D) → `BACKGROUND_DESC` / `TERRAIN_DESC` / `MONSTER_DESC` (Client측 확장)
 - `CTransform::Initialize(pArg)`: pArg가 nullptr이면 기본값으로 조기 리턴, 아니면 TRANSFORM_DESC로 캐스팅하여 속도/회전 설정
 
 ### UIObject System (CUIObject)
@@ -303,12 +324,23 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - Priority_Update에서 카메라 입력을 처리하는 이유: 다른 오브젝트의 Update/Late_Update에서 갱신된 View/Proj를 사용할 수 있도록
 - Loader에서 GamePlay 레벨용 프로토타입으로 등록, Level_GamePlay::Ready_Layer_Camera에서 Clone
 
+### Light System (CLight, CLight_Manager)
+- `CLight` (final): CBase 상속 (CComponent 아님 — 프로토타입/클론 불필요). LIGHT_DESC 저장 + Device/Context 보유 (향후 Shadow Map 등 확장용)
+- `CLight_Manager` (final): CBase 상속. 싱글톤 아님 — CGameInstance가 하나의 인스턴스를 소유
+- `list<CLight*>` 기반 광원 관리: 동적 추가 가능, 인덱스 접근 O(n) (광원 수 소량이므로 적절)
+- `LIGHT_DESC`: eType(DIRECTIONAL/POINT), vDiffuse/vAmbient/vSpecular(XMFLOAT4), vDirection(방향광용), vPosition+fRange(점광원용)
+- **데이터 흐름**: Level 초기화 시 `Add_Light(LIGHT_DESC)` → 매 프레임 Terrain::Bind_ShaderResources()에서 `Get_LightDesc(0)` → `Bind_RawValue()`로 셰이더에 전달
+- **생성/해제 순서**: Initialize_Engine()에서 가장 마지막에 생성, Release_Engine()에서 가장 먼저 해제
+- CGameInstance 위임 메서드: `Get_LightDesc`, `Add_Light`
+- **셰이더 변수**: `g_vLightDir`/`g_vLightDiffuse`/`g_vLightAmbient`/`g_vLightSpecular`는 기본값 없음 (C++에서 매 프레임 바인딩), 재질 변수(`g_vMtrlAmbient`/`g_vMtrlSpecular`)는 기본값 유지
+
 ### Vertex Format & InputLayout Embedding
 - 정점 구조체에 `static constexpr D3D11_INPUT_ELEMENT_DESC Elements[]`와 `static const unsigned int iNumElements`를 내장
 - `VTXTEX`: Position(XMFLOAT3) + Texcoord(XMFLOAT2), 2 Elements, 20 bytes
 - `VTXNORTEX`: Position(XMFLOAT3) + Normal(XMFLOAT3) + Texcoord(XMFLOAT2), 3 Elements, 32 bytes
+- `VTXMESH`: Position(XMFLOAT3) + Normal(XMFLOAT3) + Texcoord(XMFLOAT2) + Tangent(XMFLOAT3) + Binormal(XMFLOAT3), 5 Elements, 56 bytes
 - 셰이더 생성 시 `CShader::Create(..., VTXNORTEX::Elements, VTXNORTEX::iNumElements)` 형태로 사용 — 정점 포맷과 InputLayout의 결합도를 높여 불일치 방지
-- **중요:** Terrain은 VTXNORTEX 정점 포맷 → 반드시 `Shader_VtxNorTex` 셰이더와 매칭. VtxTex 셰이더 사용 시 InputLayout 불일치로 크래시
+- **중요:** 정점 포맷과 셰이더 매칭 필수 — Terrain→Shader_VtxNorTex(VTXNORTEX), Monster→Shader_VtxMesh(VTXMESH). 불일치 시 InputLayout 크래시
 
 ### VIBuffer System (Vertex/Index Buffer)
 - `CVIBuffer` (abstract): CComponent 상속. ID3D11Buffer* m_pVB/m_pIB 소유. Bind_Resources()로 IA 스테이지 세팅, Render()로 DrawIndexed() 호출
@@ -317,6 +349,19 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - `CVIBuffer_Terrain` (final): BMP 하이트맵으로부터 지형 메시 생성. VTXNORTEX 정점(높이: blue 채널 / 10.f, UV: j/(X-1), i/(Z-1)), _uint 32비트 인덱스, (X-1)*(Z-1)*2 삼각형. Create()에 pHeightMapFilePath 전달
 - 버퍼 생성 흐름: D3D11_BUFFER_DESC + D3D11_SUBRESOURCE_DATA → m_pDevice->CreateBuffer() → Safe_Delete_Array(CPU 임시 데이터)
 - Free() 순서: __super::Free() (CComponent → Device/Context 해제) → Safe_Release(m_pVB) → Safe_Release(m_pIB)
+
+### Model/Mesh System (CModel & CMesh)
+- `CModel` (final): CComponent 상속. Assimp를 통한 FBX 모델 로딩 + CMesh 관리
+- `Assimp::Importer m_Importer` + `const aiScene* m_pAIScene`: Importer가 aiScene 수명 관리 (FreeScene으로 해제)
+- `Initialize_Prototype(pModelFilePath)`: aiProcess 플래그(GlobalScale/PreTransformVertices/ConvertToLeftHanded/TargetRealtime_Fast) → ReadFile → Ready_Meshes()
+- `Ready_Meshes()`: aiScene의 각 aiMesh → CMesh::Create()로 GPU 버퍼 변환 → m_Meshes에 push_back
+- `Render()`: m_Meshes 순회 → 각 CMesh의 Bind_Resources() + Render() 호출
+- **복사 생성자 패턴**: m_iNumMeshes + m_Meshes를 복사하고 각 CMesh에 Safe_AddRef (GPU 버퍼 공유)
+- **주의**: 복사 생성자에서 m_Meshes 복사 누락 시 Clone의 Render()에서 for 루프 진입 불가 (빈 벡터)
+- `CMesh` (final): CVIBuffer 상속. aiMesh → VTXMESH 정점(Position/Normal/Texcoord/Tangent/Binormal) + _uint 인덱스로 GPU 버퍼 생성
+- CMesh::Clone()은 **nullptr 반환** — 개별 클론 불가, CModel 복사 생성자를 통해서만 공유
+- `Free()`: CModel은 m_Meshes 순회 Safe_Release + m_Importer.FreeScene(). CMesh는 CVIBuffer::Free() 위임
+- **데이터 흐름**: FBX(디스크) → Assimp ReadFile → aiScene(CPU) → Ready_Meshes() → CMesh(GPU VB/IB)
 
 ### Shader System (CShader & HLSL)
 - `CShader` (final): CComponent 상속. ID3DX11Effect* m_pEffect + vector<ID3D11InputLayout*> m_vInputLayouts 소유
@@ -327,9 +372,10 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - Bind_SRV(pConstantName, pSRV): Effect의 **GetVariableByName**(GetConstantBufferByName이 아님!) → AsShaderResource → SetResource. HLSL의 texture2D 변수에 SRV 바인딩
 - 복사 생성자에서 m_pEffect + m_vInputLayouts 모두 공유(포인터 복사 + Safe_AddRef). CVIBuffer와 동일한 리소스 공유 패턴
 - Free() 순서: __super::Free() → InputLayouts 순회 Safe_Release + clear → Safe_Release(m_pEffect)
-- HLSL 파일 위치: `Client/Bin/ShaderFiles/Shader_VtxTex.hlsl` (VTXTEX용), `Shader_VtxNorTex.hlsl` (VTXNORTEX용)
+- HLSL 파일 위치: `Client/Bin/ShaderFiles/Shader_VtxTex.hlsl` (VTXTEX용), `Shader_VtxNorTex.hlsl` (VTXNORTEX용), `Shader_VtxMesh.hlsl` (VTXMESH용)
 - HLSL 공통 구조: 전역 행렬(g_WorldMatrix, g_ViewMatrix, g_ProjMatrix) + texture2D g_Texture + sampler DefaultSampler, VS_IN/VS_OUT (정점 구조체와 1:1 대응), VS_MAIN (WVP 변환), PS_MAIN (g_Texture.Sample() + alpha test discard), technique11 DefaultTechnique / pass DefaultPass
-- Shader_VtxNorTex: VS_IN에 `float3 vNormal : NORMAL` 추가 (현재 셰이더 로직에서 미사용, 향후 라이팅용)
+- Shader_VtxNorTex: Phong Lighting 구현 — VS_OUT에 vNormal(월드 노멀) + vWorldPos(월드 좌표) 추가, PS_MAIN에서 Diffuse(Lambert) + Ambient + Specular(Phong Reflection pow 50) 계산. 빛 변수(g_vLightDir 등)는 C++에서 Bind_RawValue로 동적 바인딩, 재질 변수(g_vMtrlAmbient/g_vMtrlSpecular)는 셰이더 기본값 사용
+- Shader_VtxMesh: VTXMESH용 — VS_IN에 TANGENT/BINORMAL 추가 (현재 미사용), Phong Lighting은 VtxNorTex와 동일, PS_MAIN에서 텍스처 대신 1.f 사용 (텍스처 추출 미구현)
 - vcxproj에서 hlsl 파일의 ShaderType은 반드시 `Effect (/fx)`로 설정 (Vertex로 설정 시 FXC가 `main` 진입점을 찾아 빌드 실패)
 
 ### Texture System (CTexture)
@@ -348,8 +394,9 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - CLoader의 별도 스레드에서 WIC 텍스처 로딩 시 **CoInitializeEx(nullptr, 0) / CoUninitialize()** 필수 (COM 기반)
 
 ### GameObject Render Order
-- 렌더링 시 바인딩 순서가 중요: `Bind_ShaderResources()` → `Shader::Begin()` → `VIBuffer::Bind_Resources()` → `VIBuffer::Render()`
-- Bind_ShaderResources에서 WVP 행렬 + 텍스처를 셰이더에 전달한 후, Begin으로 Pass 적용, 그다음 IA 바인딩 + DrawIndexed
+- **VIBuffer 기반 (Terrain 등)**: `Bind_ShaderResources()` → `Shader::Begin()` → `VIBuffer::Bind_Resources()` → `VIBuffer::Render()`
+- **CModel 기반 (Monster 등)**: `Bind_ShaderResources()` → `Shader::Begin()` → `m_pModelCom->Render()` (내부에서 각 CMesh의 Bind_Resources + DrawIndexed 순회)
+- Bind_ShaderResources에서 WVP 행렬 + 텍스처/라이트를 셰이더에 전달한 후, Begin으로 Pass 적용, 그다음 IA 바인딩 + DrawIndexed
 
 ### Transform WorldMatrix & SIMD 타입
 - WorldMatrix(`_float4x4`)의 각 행은 `STATE` enum으로 인덱싱: RIGHT(0), UP(1), LOOK(2), POSITION(3)
@@ -361,6 +408,153 @@ if (GetKeyState(VK_RETURN) & 0x8000) {
 - SIMD 호출 규약 타입: `_fvector`(FXMVECTOR, 첫 3개 XMVECTOR 파라미터), `_gvector`(4번째), `_hvector`(5~6번째), `_cvector`(나머지). `_fmatrix`(첫 XMMATRIX), `_cmatrix`(나머지)
 - `TRANSFORMTYPE` enum: `TRANSFORM_2D`, `TRANSFORM_3D`, `END`. CGameObject::Initialize()에서 분기용
 - CTransform_3D의 이동 메서드는 Look/Right 벡터 기반 (3D 공간), CTransform_2D의 이동 메서드는 고정 축 방향 (X축/Y축) 기반 (2D 스크린)
+
+## 명세서 작성 원칙
+
+명세서 경로: `수업 파일/UnZips/명세서/` 아래에 `8개월_N일차_학습정리.md` 형식으로 생성한다.
+
+### 전체 구조 (순서 고정)
+
+```
+1. H1 제목          — `# 8개월차 N일차 - 주제 키워드`
+2. 개요 (##)        — 이전 일차와의 연결 + 변경 요약 테이블
+3. 목차 (##)        — 번호 + 앵커 링크
+4. 본문 섹션 (##)   — 학습 순서대로 번호 매김
+5. 차이점 섹션 (##) — "수업 코드와 내 프로젝트의 차이점" (해당 시에만)
+6. 적용 체크리스트   — Phase별 또는 파일별 체크박스
+```
+
+### 개요 섹션
+
+- 첫 문단: 이전 일차의 한계/상태를 언급한 뒤 이번 일차에서 해결하는 내용으로 연결
+- 불릿 리스트: 주요 변경사항을 **굵게** 키워드 + 한 줄 설명
+- 이미 적용된 항목은 "(N일차에서 이미 적용 완료)" 명시
+- 수업 원본과 다른 부분이 있으면 `> **수업 원본과의 차이:**` 인용 블록으로 표기
+
+### 변경 요약 테이블 (개요 내)
+
+```markdown
+| 구분 | 변경 내용 |
+|------|-----------|
+| 신규 Engine 클래스 | CLight, CLight_Manager |
+| 신규 Client 클래스 | CMonster |
+| 수정된 클래스 | CGameInstance (Light 위임), Terrain (바인딩 변경) |
+| 신규 구조체 | LIGHT_DESC |
+| 신규 HLSL | Shader_VtxMesh.hlsl |
+| 핵심 개념 | Phong Lighting, Assimp 파이프라인 |
+```
+
+### 목차 형식
+
+```markdown
+## 목차
+
+1. [이론: 주제명](#1-이론-주제명)
+2. [ClassName — 설명](#2-classname--설명)
+...
+N. [적용 체크리스트](#n-적용-체크리스트)
+```
+
+### 본문 섹션 — 학습 순서 원칙
+
+섹션 배치 순서 (앞에 있는 것이 먼저):
+
+1. **이론/개념** — 왜 필요한지, 수학/그래픽스 배경 (코드보다 반드시 먼저)
+2. **enum/struct 변경** — Engine_Enum.h, Engine_Struct.h
+3. **Engine 클래스 (.h → .cpp)** — 선언 먼저, 구현 다음
+4. **CGameInstance 위임** — 퍼사드 메서드 추가
+5. **Client 변경** — Loader, Level, GameObject
+6. **HLSL 셰이더** — 셰이더 파일 변경
+7. **차이점** — 수업 코드 vs 내 프로젝트
+8. **적용 체크리스트** — 최종
+
+### 코드 블록 규칙
+
+- **파일 위치 표시**: 코드 블록 위 또는 내부에 `// === 파일명.h ===` 또는 `// === 파일명.cpp — 메서드명() ===` 형태로 위치 명시
+- **수정사항 — Before/After**:
+  ```markdown
+  **Before (N일차):**
+  ```cpp
+  // 기존 코드
+  ```
+
+  **After (N+1일차):**
+  ```cpp
+  // 변경된 코드
+  ```
+  ```
+- **신규 코드**: 전체 함수/클래스 본문을 생략 없이 포함. 스니펫이 아닌 완전한 코드
+- **단계 주석**: 코드 내 로직 흐름을 `// (1)`, `// (2)` 번호로 표시
+- **신규 추가 마커**: `// ★ NEW:` 또는 `// ★ NEW` 로 추가된 부분 강조
+- **한국어 주석**: 코드 블록 내 주석은 한국어로 작성
+
+### 설명 도구
+
+- **비교 테이블**: 관련 개념을 나란히 비교할 때 마크다운 테이블 사용
+  ```markdown
+  | 포맷 | 구성 | 크기 | 용도 |
+  |------|------|------|------|
+  | VTXTEX | Position + Texcoord | 20 bytes | UI |
+  | VTXNORTEX | Position + Normal + Texcoord | 32 bytes | Terrain |
+  ```
+- **바이트 오프셋 테이블**: 정점 포맷 설명 시 시맨틱/포맷/크기/오프셋 테이블 포함
+- **데이터 흐름 다이어그램**: ASCII `→` 화살표 + 트리 구조로 파이프라인 시각화
+  ```
+  FBX 파일 (디스크)
+      ↓ Assimp::Importer::ReadFile()
+  aiScene (CPU)
+      ↓ CModel::Ready_Meshes()
+  CMesh (GPU VB/IB)
+  ```
+- **좌표계/메모리 레이아웃**: ASCII 그림으로 시각화
+- **"핵심 포인트" 또는 "핵심 분석"**: 코드 블록 직후에 `**핵심 포인트:**` + 불릿 리스트로 중요 사항 정리
+
+### 차이점 섹션
+
+수업 원본 코드와 내 프로젝트의 구조적 차이가 있을 때만 작성한다.
+
+```markdown
+## N. 수업 코드와 내 프로젝트의 차이점
+
+### N.1 차이점 요약
+
+| 항목 | 수업 코드 (B) | 내 프로젝트 (A) |
+|------|---------------|-----------------|
+| Transform | 단일 CTransform(final) | CTransform(abstract) → 3D/2D 분리 |
+| Input | DirectInput8 | Raw Input |
+```
+
+### 적용 체크리스트
+
+마지막 섹션. Phase(단계)별 또는 파일별로 체크박스 나열.
+
+```markdown
+## N. 적용 체크리스트
+
+### Phase 1: Engine 구조체/열거형
+- [ ] Engine_Enum.h — LIGHT enum 추가
+- [ ] Engine_Struct.h — LIGHT_DESC 구조체 추가
+
+### Phase 2: Engine 클래스
+- [ ] Light.h / Light.cpp 신규 생성
+- [ ] Light_Manager.h / Light_Manager.cpp 신규 생성
+
+### Phase 3: Client 변경
+- [ ] Level_GamePlay — Ready_Lights() 추가
+```
+
+### 보조 문서
+
+특정 주제가 메인 명세서에 넣기엔 너무 깊거나 독립적일 때, 별도 파일로 분리한다.
+- 파일명: `주제명.md` (예: `Assimp_분리_적용_가이드.md`, `8개월_7일차_학습정리 - Process_Input 설명.md`)
+- 메인 명세서에서 해당 문서를 참조 링크로 언급
+
+### 톤 & 스타일
+
+- 기술적이고 교육적인 어조 — "왜(Why)"를 "무엇(What)"보다 먼저 설명
+- 설명은 한국어, 코드 식별자는 영어 유지
+- 이전 일차 내용을 참조할 때: "N일차에서는 ... 했지만, N+1일차에서는 ..." 패턴
+- DirectX/GPU 파이프라인과의 연결고리를 항상 제시
 
 ## CLAUDE.md Update Routine
 

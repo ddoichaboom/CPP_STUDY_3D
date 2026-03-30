@@ -7,10 +7,10 @@ float4x4 g_WorldMatrix, g_ViewMatrix, g_ProjMatrix;
 vector g_vCamPosition;
 
 // ºû
-vector g_vLightDir      = vector(1.f, -1.f, 1.f, 0.f);          // ºûÀÌ Ç¥¸éÀ¸·Î µé¾î¿À´Â ¹æÇâ (¹æÇâ±¤)
-vector g_vLightDiffuse  = vector(1.f, 1.f, 1.f, 1.f);           // ºûÀÇ ³­¹Ý»ç »ö»ó
-vector g_vLightAmbient  = vector(1.f, 1.f, 1.f, 1.f);           // ºûÀÇ È¯°æ±¤ »ö»ó
-vector g_vLightSpecular = vector(1.f, 1.f, 1.f, 1.f);           // ºûÀÇ Á¤¹Ý»ç »ö»ó
+vector g_vLightDir;                 // ºûÀÌ Ç¥¸éÀ¸·Î µé¾î¿À´Â ¹æÇâ (¹æÇâ±¤)
+vector g_vLightDiffuse;             // ºûÀÇ ³­¹Ý»ç »ö»ó
+vector g_vLightAmbient;             // ºûÀÇ È¯°æ±¤ »ö»ó
+vector g_vLightSpecular;            // ºûÀÇ Á¤¹Ý»ç »ö»ó
 
 // ÀçÁú
 texture2D g_DiffuseTexture;                                     // ÅØ½ºÃ³ (ÀçÁúÀÇ ³­¹Ý»ç)

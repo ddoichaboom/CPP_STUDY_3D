@@ -82,7 +82,6 @@ HRESULT CTerrain::Bind_ShaderResources()
     if (FAILED(m_pTransformCom->Bind_ShaderResource(m_pShaderCom, "g_WorldMatrix")))
         return E_FAIL;
 
-
     if (FAILED(m_pShaderCom->Bind_Matrix("g_ViewMatrix",
         m_pGameInstance->Get_Transform(D3DTS::VIEW))))
         return E_FAIL;
@@ -96,6 +95,29 @@ HRESULT CTerrain::Bind_ShaderResources()
 
     if (FAILED(m_pShaderCom->Bind_RawValue("g_vCamPosition",
         m_pGameInstance->Get_CamPosition(), sizeof(_float4))))
+        return E_FAIL;
+
+    // CLight Manager에서 조명 데이터를 가져와서 바인딩
+    const LIGHT_DESC* pLightDesc = m_pGameInstance->Get_LightDesc(0);
+    if (nullptr == pLightDesc)
+        return E_FAIL;
+    /*
+    vector g_vLightDir;                 // 빛이 표면으로 들어오는 방향 (방향광)
+    vector g_vLightDiffuse;             // 빛의 난반사 색상
+    vector g_vLightAmbient;             // 빛의 환경광 색상
+    vector g_vLightSpecular;            // 빛의 정반사 색상
+    */
+
+    if (FAILED(m_pShaderCom->Bind_RawValue("g_vLightDir", &pLightDesc->vDirection, sizeof(_float4))))
+        return E_FAIL;
+
+    if (FAILED(m_pShaderCom->Bind_RawValue("g_vLightDiffuse", &pLightDesc->vDiffuse, sizeof(_float4))))
+        return E_FAIL;
+
+    if (FAILED(m_pShaderCom->Bind_RawValue("g_vLightAmbient", &pLightDesc->vAmbient, sizeof(_float4))))
+        return E_FAIL;
+
+    if (FAILED(m_pShaderCom->Bind_RawValue("g_vLightSpecular", &pLightDesc->vSpecular, sizeof(_float4))))
         return E_FAIL;
 
     return S_OK;

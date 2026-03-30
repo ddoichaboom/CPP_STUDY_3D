@@ -91,6 +91,18 @@
     <Filter Include="08. PipeLine">
       <UniqueIdentifier>{36554e10-b8ab-48b7-a692-9c64ecfc46b8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="09. Lights">
+      <UniqueIdentifier>{e2745754-0fab-4dfb-865e-d6f9087bba29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="09. Lights\Manager">
+      <UniqueIdentifier>{13da2b16-9106-4810-85f9-1f8f19a10da1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\Model">
+      <UniqueIdentifier>{b6e2559e-db59-4593-8b49-3c5b04947a76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\VIBuffer\Mesh">
+      <UniqueIdentifier>{7fb51960-141a-401b-b20e-29e0226dd22e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Public\Engine_Defines.h">
@@ -186,6 +198,18 @@
     <ClInclude Include="..\Public\Input_Device.h">
       <Filter>01. Device\Input</Filter>
     </ClInclude>
+    <ClInclude Include="..\Public\Light.h">
+      <Filter>09. Lights</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Light_Manager.h">
+      <Filter>09. Lights\Manager</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Model.h">
+      <Filter>07. Component\Model</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Mesh.h">
+      <Filter>07. Component\VIBuffer\Mesh</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Private\Base.cpp">
@@ -262,6 +286,18 @@
     </ClCompile>
     <ClCompile Include="..\Private\Input_Device.cpp">
       <Filter>01. Device\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Light.cpp">
+      <Filter>09. Lights</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Light_Manager.cpp">
+      <Filter>09. Lights\Manager</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Model.cpp">
+      <Filter>07. Component\Model</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Mesh.cpp">
+      <Filter>07. Component\VIBuffer\Mesh</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
