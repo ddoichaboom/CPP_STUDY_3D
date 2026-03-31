@@ -83,6 +83,13 @@ HRESULT CLevel_GamePlay::Ready_Layer_BackGround(const _wstring& strLayerTag)
 		ETOUI(LEVEL::GAMEPLAY), strLayerTag)))
 		return E_FAIL;
 
+	for (size_t i = 0; i < 10; i++)
+	{
+		if (FAILED(m_pGameInstance->Add_GameObject(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_GameObject_ForkLift"),
+			ETOUI(LEVEL::GAMEPLAY), strLayerTag)))
+			return E_FAIL;
+	}
+
 	return S_OK;
 }
 

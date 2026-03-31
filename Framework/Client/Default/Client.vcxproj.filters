@@ -46,6 +46,9 @@
     <Filter Include="02. GameObject\Monster">
       <UniqueIdentifier>{a1290551-3d69-45b7-a860-ec806b755ad2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="02. GameObject\ForkLift">
+      <UniqueIdentifier>{42699958-8625-482b-96ef-13134f9f1abf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp">
@@ -77,6 +80,9 @@
     </ClCompile>
     <ClCompile Include="..\Private\Monster.cpp">
       <Filter>02. GameObject\Monster</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\ForkLift.cpp">
+      <Filter>02. GameObject\ForkLift</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,6 +127,9 @@
     </ClInclude>
     <ClInclude Include="..\Public\Monster.h">
       <Filter>02. GameObject\Monster</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ForkLift.h">
+      <Filter>02. GameObject\ForkLift</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

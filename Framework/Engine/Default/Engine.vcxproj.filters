@@ -100,8 +100,11 @@
     <Filter Include="07. Component\Model">
       <UniqueIdentifier>{b6e2559e-db59-4593-8b49-3c5b04947a76}</UniqueIdentifier>
     </Filter>
-    <Filter Include="07. Component\VIBuffer\Mesh">
+    <Filter Include="07. Component\Model\Mesh">
       <UniqueIdentifier>{7fb51960-141a-401b-b20e-29e0226dd22e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\Model\Material">
+      <UniqueIdentifier>{b747e01c-b634-45f7-88a6-779c02864dcd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -208,7 +211,10 @@
       <Filter>07. Component\Model</Filter>
     </ClInclude>
     <ClInclude Include="..\Public\Mesh.h">
-      <Filter>07. Component\VIBuffer\Mesh</Filter>
+      <Filter>07. Component\Model\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Material.h">
+      <Filter>07. Component\Model\Material</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -297,7 +303,10 @@
       <Filter>07. Component\Model</Filter>
     </ClCompile>
     <ClCompile Include="..\Private\Mesh.cpp">
-      <Filter>07. Component\VIBuffer\Mesh</Filter>
+      <Filter>07. Component\Model\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Private\Material.cpp">
+      <Filter>07. Component\Model\Material</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

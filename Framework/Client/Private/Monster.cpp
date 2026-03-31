@@ -42,17 +42,22 @@ void CMonster::Late_Update(_float fTimeDelta)
 
 HRESULT CMonster::Render()
 {
-	// (1) ¼ÎÀÌ´õ¿¡ µ¥ÀÌÅÍ ¹ÙÀÎµù
 	if (FAILED(Bind_ShaderResources()))
 		return E_FAIL;
 
-	// (2) ¼ÎÀÌ´õ Pass Àû¿ë
-	if (FAILED(m_pShaderCom->Begin(0)))
-		return E_FAIL;
+	size_t      iNumMeshes = m_pModelCom->Get_NumMeshes();
 
-	// (3) ¸ðµ¨ ·»´õ¸µ 
-	if (FAILED(m_pModelCom->Render()))
-		return E_FAIL;
+	for (size_t i = 0; i < iNumMeshes; i++)
+	{
+		if (FAILED(m_pModelCom->Bind_Material(m_pShaderCom, "g_DiffuseTexture", i, aiTextureType_DIFFUSE, 0)))
+			return E_FAIL;
+
+		if (FAILED(m_pShaderCom->Begin(0)))
+			return E_FAIL;
+
+		if (FAILED(m_pModelCom->Render(i)))
+			return E_FAIL;
+	}
 
 	return S_OK;
 }
@@ -65,7 +70,7 @@ HRESULT	CMonster::Ready_Components()
 		return E_FAIL;
 
 	// Com_Model
-	if (FAILED(__super::Add_Component(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Model_ForkLift"),
+	if (FAILED(__super::Add_Component(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Model_Fiona"),
 		TEXT("Com_Model"), reinterpret_cast<CComponent**>(&m_pModelCom))))
 		return E_FAIL;
 

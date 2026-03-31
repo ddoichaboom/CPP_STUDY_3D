@@ -10,6 +10,7 @@
 #include "Terrain.h"
 #include "Camera_Free.h"
 #include "Monster.h"
+#include "ForkLift.h"
 
 CLoader::CLoader(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 	: m_pDevice { pDevice }
@@ -111,6 +112,8 @@ HRESULT CLoader::Ready_Resources_For_Logo()
 
 HRESULT CLoader::Ready_Resources_For_GamePlay()
 {
+	_matrix PreTransformMatrix = {};
+
 	lstrcpy(m_szLoadingText, TEXT("텍스쳐 로딩 중"));
 
 	// Prototype_Component_Texture_Terrain
@@ -137,14 +140,17 @@ HRESULT CLoader::Ready_Resources_For_GamePlay()
 		CVIBuffer_Terrain::Create(m_pDevice, m_pContext, TEXT("../Bin/Resources/Textures/Terrain/Height.bmp")))))
 		return E_FAIL;
 
+	PreTransformMatrix = XMMatrixRotationY(XMConvertToRadians(180.f));
 	/* Prototype_Component_Model_Fiona */
 	if (FAILED(m_pGameInstance->Add_Prototype(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Model_Fiona"),
-		CModel::Create(m_pDevice, m_pContext, "../Bin/Resources/Models/Fiona/Fiona.fbx"))))
+		CModel::Create(m_pDevice, m_pContext, MODEL::NONANIM,  "../Bin/Resources/Models/Fiona/Fiona.fbx", PreTransformMatrix))))
 		return E_FAIL;
 
+
+	PreTransformMatrix = XMMatrixScaling(0.01f, 0.01f, 0.01f) * XMMatrixRotationY(XMConvertToRadians(180.f));
 	/* Prototype_Component_Model_ForkLift */
 	if (FAILED(m_pGameInstance->Add_Prototype(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_Component_Model_ForkLift"),
-		CModel::Create(m_pDevice, m_pContext, "../Bin/Resources/Models/ForkLift/ForkLift.fbx"))))
+		CModel::Create(m_pDevice, m_pContext, MODEL::NONANIM, "../Bin/Resources/Models/ForkLift/ForkLift.fbx", PreTransformMatrix))))
 		return E_FAIL;
 
 	lstrcpy(m_szLoadingText, TEXT("객체원형 로딩 중"));
@@ -162,6 +168,11 @@ HRESULT CLoader::Ready_Resources_For_GamePlay()
 	/* Prototype_GameObject_Monster */
 	if (FAILED(m_pGameInstance->Add_Prototype(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_GameObject_Monster"),
 		CMonster::Create(m_pDevice, m_pContext))))
+		return E_FAIL;
+
+	/* Prototype_GameObject_ForkLift */
+	if (FAILED(m_pGameInstance->Add_Prototype(ETOUI(LEVEL::GAMEPLAY), TEXT("Prototype_GameObject_ForkLift"),
+		CForkLift::Create(m_pDevice, m_pContext))))
 		return E_FAIL;
 
 	lstrcpy(m_szLoadingText, TEXT("로딩이 완료되었습니다."));

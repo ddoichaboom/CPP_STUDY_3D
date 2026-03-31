@@ -98,7 +98,7 @@ PS_OUT PS_MAIN(PS_IN In)
     PS_OUT Out;
     
     // (1) 텍스처 샘플링 (재질의 Diffuse 색상)
-    vector vMtrlDiffuse = /*g_DiffuseTexture.Sample(DefaultSampler, In.vTexcoord);*/ 1.f;
+    vector vMtrlDiffuse = g_DiffuseTexture.Sample(DefaultSampler, In.vTexcoord);;
     if (vMtrlDiffuse.a < 0.1f)
         discard;
     
