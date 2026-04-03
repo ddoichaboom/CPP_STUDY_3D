@@ -49,9 +49,6 @@
     <Filter Include="07. Component">
       <UniqueIdentifier>{153b7e3c-786f-4e79-baad-a738a2167b1a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="07. Component\Transform">
-      <UniqueIdentifier>{c6a32ce5-f5fc-421b-b902-ec56ab1a218b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="07. Component\VIBuffer">
       <UniqueIdentifier>{5f7c4e1c-52de-48bc-9e0f-35a7fdc6b679}</UniqueIdentifier>
     </Filter>
@@ -69,6 +66,9 @@
     </Filter>
     <Filter Include="07. Component\Texture">
       <UniqueIdentifier>{f7aa410a-f839-49b6-979c-1ea351097886}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="07. Component\Transform">
+      <UniqueIdentifier>{c6a32ce5-f5fc-421b-b902-ec56ab1a218b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

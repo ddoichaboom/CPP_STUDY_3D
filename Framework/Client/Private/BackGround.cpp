@@ -1,6 +1,5 @@
 #include "BackGround.h"
 #include "GameInstance.h"
-#include "Terrain.h"
 #include "Transform_2D.h"
 
 CBackGround::CBackGround(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
